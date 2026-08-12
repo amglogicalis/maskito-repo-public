@@ -1,0 +1,6 @@
+{
+  "app": "maskito",
+  "title": "MASKITO — Compound Eye Console",
+  "entry": "index.html",
+  "port": 7410
+}
