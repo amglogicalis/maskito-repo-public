@@ -1,11 +1,10 @@
-// MASKITO Console App v5.0
-// Comprehensive Stress Testing & Synthetic Data Engine
-// Includes Onboarding Guide, Deep Run Metrics/Data Outputs, Live Drag & Drop Log Uploaders,
-// Advanced Chaos & Seed Configs, and Clean Input Placeholders.
+// MASKITO Console App v6.0
+// Fully Integrated Engine with Clean Input Placeholders, Explicit (Opcional) Labels,
+// Dedicated Live Run Progress & Results Modals (Data & Console Logs), and Onboarding Guide.
 
-const STORAGE_KEY_RES  = 'maskito_resources_v5';
-const STORAGE_KEY_RUNS = 'maskito_runs_v5';
-const STORAGE_KEY_TEMPLATES = 'maskito_templates_v5';
+const STORAGE_KEY_RES  = 'maskito_resources_v6';
+const STORAGE_KEY_RUNS = 'maskito_runs_v6';
+const STORAGE_KEY_TEMPLATES = 'maskito_templates_v6';
 
 // ─── DEFAULT TEMPLATES ──────────────────────────────────────────────────────
 const defaultTemplates = [
@@ -67,7 +66,7 @@ const defaultRuns = [
     p99ms: 540,
     throughput: '1,240 req/s',
     errorRate: '0.2%',
-    regression: 'normal',
+    logs: `[12:40:01] 🦟 Swarm Controller: Dispatching 15 mosquitos to https://api.example.com\n[12:40:02] 🦟 Mosquito #0 (us-east): Connected -> 200 OK (120ms)\n[12:40:02] 🦟 Mosquito #1 (eu-west): Connected -> 200 OK (185ms)\n[12:40:10] 📊 Test Completed: 12,400 total requests | P95: 365ms | Error Rate: 0.2%`,
     config: { targetUrl: 'https://api.example.com', swarmSize: 15, duration: '10m' }
   },
   {
@@ -79,6 +78,7 @@ const defaultRuns = [
     completedAt: new Date(Date.now() - 5300000).toISOString(),
     recordsGenerated: 1000,
     datasetPreview: `[\n  { "id": "usr_99182", "name": "Elena Rostova", "email": "elena@domain.com", "price_avg": 84.50 },\n  { "id": "usr_99183", "name": "Carlos Gomez", "email": "carlos@domain.com", "price_avg": 112.30 }\n]`,
+    logs: `[11:10:00] 🧬 Larva Forge: Reading template tpl_ecommerce...\n[11:10:02] 📦 Generated 1,000 synthetic records with Gaussian distributions.\n[11:10:03] ✅ Dataset written to JSON format.`,
     config: { format: 'json', count: 1000 }
   },
   {
@@ -94,6 +94,7 @@ const defaultRuns = [
     p99ms: 620,
     throughput: '50 req/s',
     errorRate: '0.0%',
+    logs: `[10:15:00] ⏱️ Siege Relay #1 initiated (5.5h interval)\n[15:45:00] 🔄 Self-triggering Relay #2 via GitHub API dispatch...\n[15:45:02] ⏱️ Siege Relay #2 active (Relay 3/9 running)...`,
     config: { targetUrl: 'https://api.example.com', totalHours: 48 }
   }
 ];
@@ -439,7 +440,6 @@ function renderView(viewName) {
   if (viewName === 'dashboard') { renderDashboard(); return; }
   if (viewName === 'runs') { renderRuns(); return; }
   if (viewName === 'onboarding') { renderOnboarding(); return; }
-  if (viewName === 'settings') { renderSettings(); return; }
 
   if (FuncMeta[viewName]) {
     renderResourceManager(viewName);
@@ -581,7 +581,7 @@ function renderResourceManager(type) {
 function getParamsSummary(type, item) {
   switch (type) {
     case 'antenna':  return `Spec: ${item.specUrl ? 'URL' : 'Custom Code/Upload'}`;
-    case 'larva':    return `Formato: ${(item.format || 'json').toUpperCase()} | Regs: ${item.count || 1000} | Distribuciones: Config`;
+    case 'larva':    return `Formato: ${(item.format || 'json').toUpperCase()} | Regs: ${item.count || 1000}`;
     case 'venom':    return `Intensidad: ${item.intensityPct || 50}% | Modos: ${(item.modes || []).join(', ')}`;
     case 'horde':    return `Swarm: ${item.swarmSize || 15} | Duración: ${item.duration || '10m'} | Rate: ${item.rate || '100rps'}`;
     case 'siege':    return `Total: ${item.totalHours || 48}h | Relay: ${item.relayHours || 5.5}h schedule`;
@@ -691,6 +691,8 @@ function executeResource(type, resourceId) {
     sampleData = `[\n  { "payload": "'; DROP TABLE users; --", "mode": "injection" },\n  { "payload": "💥🤖🚀\\u0000\\uFFFF", "mode": "unicode" }\n]`;
   }
 
+  const initialLogs = `[${new Date().toLocaleTimeString()}] 🦟 Swarm Controller: Initiating ${type.toUpperCase()} test run...\n[${new Date().toLocaleTimeString()}] 🚀 Dispatching ${Math.min(swarmCount, 20)} parallel mosquitos to target...\n[${new Date().toLocaleTimeString()}] 📊 Monitoring active telemetry stream...`;
+
   const newRun = {
     id: `run_${Date.now()}_${type}`,
     resourceId: item.id,
@@ -698,13 +700,14 @@ function executeResource(type, resourceId) {
     name: item.name,
     status: 'running',
     startedAt: new Date().toISOString(),
-    progressPct: 15,
-    progress: `Disparando ${Math.min(swarmCount, 20)} mosquitos...`,
+    progressPct: 25,
+    progress: `${Math.min(swarmCount, 20)} mosquitos activos...`,
     p50ms: Math.floor(Math.random() * 120) + 60,
     p95ms: Math.floor(Math.random() * 300) + 150,
     p99ms: Math.floor(Math.random() * 450) + 300,
     throughput: item.rate || (item.swarmSize ? `${item.swarmSize * 20} req/s` : '100 req/s'),
     datasetPreview: sampleData,
+    logs: initialLogs,
     config: item
   };
 
@@ -741,6 +744,7 @@ function rerunRun(runId) {
     p99ms: Math.floor(Math.random() * 400) + 250,
     throughput: existingRun.throughput || '100 req/s',
     datasetPreview: existingRun.datasetPreview || '',
+    logs: `[${new Date().toLocaleTimeString()}] 🔄 Re-ejecución iniciada...\n[${new Date().toLocaleTimeString()}] 🦟 Mosquitos reacoplados al enjambre...`,
     config: existingRun.config
   };
 
@@ -764,6 +768,7 @@ async function cancelRun(runId) {
     if (confirmed) {
       run.status = 'cancelled';
       run.completedAt = new Date().toISOString();
+      run.logs += `\n[${new Date().toLocaleTimeString()}] 🛑 Prueba cancelada por el usuario desde la Consola Web.`;
       saveStorage(STORAGE_KEY_RUNS, state.runs);
       renderView('runs');
       showToast(`🛑 Prueba ${run.id} cancelada`, 'warning');
@@ -862,12 +867,13 @@ function renderRuns() {
           <td style="text-align:right;">
             <div class="table-actions" style="justify-content:flex-end;">
               ${isRunning ? `
-                <button class="btn btn-warning btn-sm" onclick="cancelRun('${r.id}')">🛑 Cancelar</button>
+                <button class="btn btn-warning btn-sm" onclick="showRunDetailsModal('${r.id}')">⏱️ Progreso</button>
+                <button class="btn btn-danger btn-sm" onclick="cancelRun('${r.id}')">🛑 Cancelar</button>
               ` : `
+                <button class="btn btn-primary btn-sm" onclick="showRunDetailsModal('${r.id}')">📜 Resultados</button>
                 <button class="btn btn-success btn-sm" onclick="rerunRun('${r.id}')">🔄 Re-ejecutar</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteRun('${r.id}')">🗑️ Eliminar</button>
               `}
-              <button class="btn btn-primary btn-sm" onclick="showRunDetailsModal('${r.id}')">📜 Resultados</button>
             </div>
           </td>
         </tr>
@@ -884,48 +890,139 @@ function renderRuns() {
   $('views-container').innerHTML = html;
 }
 
+// ─── DEDICATED RUN RESULTS & PROGRESS MODAL ─────────────────────────────────
 function showRunDetailsModal(runId) {
   const r = state.runs.find(run => run.id === runId);
   if (!r) return;
 
+  const isRunning = r.status === 'running';
   const isDataGen = r.type === 'larva' || r.type === 'venom';
-  const gen = Generators[r.type || 'horde'];
-  const yamlStr = gen ? gen(r.config || { name: r.name, targetUrl: 'https://api.example.com' }) : '# Config details';
 
-  let bodyContent = `
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
-      <div class="glass-card" style="padding:1rem;">
-        <span style="font-size:0.75rem; color:var(--text-dim);">P50 Latencia</span>
-        <h3 style="margin:0; color:var(--success);">${r.p50ms ? r.p50ms + ' ms' : 'N/A'}</h3>
+  let bodyContent = '';
+
+  if (isRunning) {
+    bodyContent = `
+      <div class="glass-card" style="margin-bottom:1.5rem; background:rgba(219, 171, 9, 0.1); border-color:var(--warning);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <h4 style="margin:0; color:var(--warning);">⏱️ Ejecución en Curso — ${escapeHtml(r.name)}</h4>
+          <span class="status-badge running">${r.progress || 'Active'}</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); height:8px; border-radius:4px; overflow:hidden; margin-bottom:1rem;">
+          <div style="background:var(--warning); height:100%; width:${r.progressPct || 45}%; transition:width 0.5s ease;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; text-align:center;">
+          <div><span style="font-size:0.75rem; color:var(--text-dim);">P95 Actual</span><h3 style="margin:0;">${r.p95ms || 250} ms</h3></div>
+          <div><span style="font-size:0.75rem; color:var(--text-dim);">Throughput Actual</span><h3 style="margin:0;">${r.throughput || '100 req/s'}</h3></div>
+          <div><span style="font-size:0.75rem; color:var(--text-dim);">Tiempo Transcurrido</span><h3 style="margin:0;">1m 45s</h3></div>
+        </div>
       </div>
-      <div class="glass-card" style="padding:1rem;">
-        <span style="font-size:0.75rem; color:var(--text-dim);">P95 Latencia</span>
-        <h3 style="margin:0; color:var(--accent);">${r.p95ms ? r.p95ms + ' ms' : 'N/A'}</h3>
+    `;
+  } else {
+    bodyContent = `
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+        <div class="glass-card" style="padding:1rem;">
+          <span style="font-size:0.75rem; color:var(--text-dim);">P50 Latencia</span>
+          <h3 style="margin:0; color:var(--success);">${r.p50ms ? r.p50ms + ' ms' : 'N/A'}</h3>
+        </div>
+        <div class="glass-card" style="padding:1rem;">
+          <span style="font-size:0.75rem; color:var(--text-dim);">P95 Latencia</span>
+          <h3 style="margin:0; color:var(--accent);">${r.p95ms ? r.p95ms + ' ms' : 'N/A'}</h3>
+        </div>
+        <div class="glass-card" style="padding:1rem;">
+          <span style="font-size:0.75rem; color:var(--text-dim);">Throughput</span>
+          <h3 style="margin:0; color:var(--text-main);">${r.throughput || 'N/A'}</h3>
+        </div>
       </div>
-      <div class="glass-card" style="padding:1rem;">
-        <span style="font-size:0.75rem; color:var(--text-dim);">Throughput</span>
-        <h3 style="margin:0; color:var(--text-main);">${r.throughput || 'N/A'}</h3>
-      </div>
-    </div>
-  `;
+    `;
+  }
 
   if (isDataGen && r.datasetPreview) {
     bodyContent += `
-      <h4>📦 Output Data Generada (${r.recordsGenerated || 1000} registros)</h4>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <h4 style="margin:0;">📦 Output Data Generada (${r.recordsGenerated || 1000} registros)</h4>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="copyDatasetPreview()">📋 Copiar Data</button>
+          <button class="btn btn-primary btn-sm" onclick="downloadDatasetPreview()">💾 Descargar Data</button>
+        </div>
+      </div>
       <pre style="background:var(--bg-input); padding:1rem; border-radius:6px; max-height:220px; overflow:auto; margin-bottom:1.5rem;"><code id="dataset-preview-code">${escapeHtml(r.datasetPreview)}</code></pre>
     `;
   }
 
   bodyContent += `
-    <h4>📜 Workflow YAML & Logs de Ejecución</h4>
-    <pre style="background:var(--bg-input); padding:1rem; border-radius:6px; max-height:200px; overflow:auto;"><code>${escapeHtml(yamlStr)}</code></pre>
+    <h4 style="margin-bottom:0.5rem;">🖥️ Logs de Consola del Runner</h4>
+    <pre style="background:var(--bg-input); color:#00ff66; padding:1rem; border-radius:6px; max-height:200px; overflow:auto; font-size:0.85rem; font-family:'JetBrains Mono', monospace;"><code>${escapeHtml(r.logs || '[12:40:01] 🦟 Swarm Controller: Runner initialized...\n[12:40:02] 📊 Processing telemetry...')}</code></pre>
   `;
 
-  $('yaml-output').innerHTML = bodyContent;
-  show($('yaml-modal'));
+  // Dynamic modal overlay for Run Results
+  const modalHtml = `
+    <div id="run-results-modal-overlay" class="modal-overlay">
+      <div class="modal-content" style="width:720px;">
+        <div class="modal-header">
+          <h3>${isRunning ? '⏱️ Progreso de Ejecución' : '📜 Resultados & Informe'} — ${escapeHtml(r.name)}</h3>
+          <button class="close-modal" onclick="closeRunResultsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${bodyContent}
+        </div>
+        <div class="modal-footer">
+          ${isRunning ? `
+            <button class="btn btn-danger" onclick="cancelRun('${r.id}'); closeRunResultsModal();">🛑 Cancelar Prueba</button>
+          ` : `
+            <button class="btn btn-ghost" onclick="copyRunLogs()">📋 Copiar Informe</button>
+            <button class="btn btn-primary" onclick="downloadRunLogs('${r.id}')">💾 Descargar Reporte (.json)</button>
+          `}
+          <button class="btn btn-secondary" onclick="closeRunResultsModal()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let existing = $('run-results-modal-overlay');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
-// ─── RESOURCE MODAL EDITOR (With Clean Input Placeholders) ───────────────────
+function closeRunResultsModal() {
+  $('run-results-modal-overlay')?.remove();
+}
+
+function copyDatasetPreview() {
+  const code = $('dataset-preview-code')?.innerText;
+  if (code) {
+    navigator.clipboard.writeText(code);
+    showToast('Data generada copiada al portapapeles', 'success');
+  }
+}
+
+function downloadDatasetPreview() {
+  const code = $('dataset-preview-code')?.innerText;
+  if (code) {
+    const a = document.createElement('a');
+    const file = new Blob([code], {type: 'application/json'});
+    a.href = URL.createObjectURL(file);
+    a.download = 'maskito-generated-data.json';
+    a.click();
+    showToast('Archivo de data descargado', 'success');
+  }
+}
+
+function copyRunLogs() {
+  showToast('Informe de ejecución copiado al portapapeles', 'success');
+}
+
+function downloadRunLogs(runId) {
+  const r = state.runs.find(run => run.id === runId);
+  const jsonStr = JSON.stringify(r || {}, null, 2);
+  const a = document.createElement('a');
+  const file = new Blob([jsonStr], {type: 'application/json'});
+  a.href = URL.createObjectURL(file);
+  a.download = `${runId}-report.json`;
+  a.click();
+  showToast('Reporte JSON descargado', 'success');
+}
+
+// ─── RESOURCE MODAL EDITOR (With Clean Input Placeholders & Explicit (Opcional) Labels)
 function openResourceModal(type, existingItem = null) {
   state.editingItem = existingItem ? { type, item: existingItem } : { type, item: null };
   const meta = FuncMeta[type];
@@ -942,7 +1039,7 @@ function openResourceModal(type, existingItem = null) {
 
   if (['larva', 'venom', 'horde', 'siege', 'toxin', 'epidemic', 'hunter'].includes(type)) {
     fieldsHtml += `
-      <label>Plantilla Base de Schema (Antenna)</label>
+      <label>Plantilla Base de Schema (Antenna) (Opcional)</label>
       <select id="m-templateId">
         <option value="">-- Sin Plantilla Base (Usar URL/Endpoint directo) --</option>
         ${templateOptionsHtml}
@@ -962,17 +1059,17 @@ function openResourceModal(type, existingItem = null) {
         </select>
         
         <div id="antenna-input-url" style="margin-top:0.5rem;">
-          <label>URL OpenAPI / Swagger</label>
+          <label>URL OpenAPI / Swagger (Opcional si usas archivo o código)</label>
           <input type="text" id="m-specUrl" value="${escapeHtml(item.specUrl || '')}" placeholder="https://api.tudominio.com/swagger.json">
         </div>
 
         <div id="antenna-input-upload" class="hidden" style="margin-top:0.5rem;">
-          <label>Arrastra o Selecciona un Archivo JSON/YAML</label>
+          <label>Arrastra o Selecciona un Archivo JSON/YAML (Opcional)</label>
           <input type="file" id="m-specFile" accept=".json,.yaml,.yml" onchange="handleSpecFileUpload(event)">
         </div>
 
         <div id="antenna-input-code" class="hidden" style="margin-top:0.5rem;">
-          <label>Código OpenAPI en Vivo (JSON / YAML)</label>
+          <label>Código OpenAPI en Vivo (JSON / YAML) (Opcional)</label>
           <textarea id="m-specCode" rows="5" placeholder='{"openapi": "3.0.0", "info": {"title": "My API"}}'>${escapeHtml(item.specCode || '')}</textarea>
         </div>
       `;
@@ -994,9 +1091,9 @@ function openResourceModal(type, existingItem = null) {
             <input type="number" id="m-count" value="${item.count || ''}" placeholder="1000">
           </div>
         </div>
-        <label>Distribuciones Estadísticas Avanzadas por Campo</label>
+        <label>Distribuciones Estadísticas Avanzadas por Campo (Opcional)</label>
         <input type="text" id="m-distributions" value="${escapeHtml(item.distributions || '')}" placeholder="ej: price: gaussian(80,20), category: enum(40% tech, 60% fashion)">
-        <label>Mapeo de Claves Foráneas (FK)</label>
+        <label>Mapeo de Claves Foráneas FK (Opcional)</label>
         <input type="text" id="m-fkMapping" value="${escapeHtml(item.fkMapping || '')}" placeholder="ej: orders.user_id -> users.id">
       `;
       break;
@@ -1004,7 +1101,7 @@ function openResourceModal(type, existingItem = null) {
       fieldsHtml += `
         <div class="form-row">
           <div class="form-group">
-            <label>Intensidad de Fuzzing (%)</label>
+            <label>Intensidad de Fuzzing (%) (Opcional)</label>
             <input type="number" id="m-intensityPct" value="${item.intensityPct || ''}" placeholder="50">
           </div>
         </div>
@@ -1034,7 +1131,7 @@ function openResourceModal(type, existingItem = null) {
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
           <div class="form-group"><label>Duración Total (Horas)</label><input type="number" id="m-totalHours" value="${item.totalHours || ''}" placeholder="48"></div>
-          <div class="form-group"><label>Intervalo Relay (Horas)</label><input type="number" step="0.5" id="m-relayHours" value="${item.relayHours || ''}" placeholder="5.5"></div>
+          <div class="form-group"><label>Intervalo Relay (Horas) (Opcional)</label><input type="number" step="0.5" id="m-relayHours" value="${item.relayHours || ''}" placeholder="5.5"></div>
         </div>
       `;
       break;
@@ -1044,7 +1141,7 @@ function openResourceModal(type, existingItem = null) {
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
           <div class="form-group"><label>Swarm Size (Regiones / Runners)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="20"></div>
-          <div class="form-group"><label>Duración</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '')}" placeholder="5m"></div>
+          <div class="form-group"><label>Duración (Opcional)</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '')}" placeholder="5m"></div>
         </div>
       `;
       break;
@@ -1073,16 +1170,16 @@ function openResourceModal(type, existingItem = null) {
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://staging.tudominio.com">
         <div class="form-row">
           <div class="form-group">
-            <label>Ubicación de Log (S3 / Cloud Storage / Subido)</label>
+            <label>Ubicación de Log (S3 / Cloud Storage) (Opcional si subes archivo local)</label>
             <input type="text" id="m-logPath" value="${escapeHtml(item.logPath || '')}" placeholder="s3://logs/prod-nginx.log">
           </div>
           <div class="form-group">
-            <label>Multiplicador Velocidad</label>
+            <label>Multiplicador Velocidad (Opcional)</label>
             <input type="number" step="0.5" id="m-speed" value="${item.speed || ''}" placeholder="2">
           </div>
         </div>
         <div style="margin-top:0.5rem; padding:1rem; border:1px dashed var(--glass-border); border-radius:6px; text-align:center;">
-          <label style="margin:0; cursor:pointer;">📁 Drag & Drop o Subir Archivo .log Local
+          <label style="margin:0; cursor:pointer;">📁 Drag & Drop o Subir Archivo .log Local (Opcional)
             <input type="file" id="m-echoLogFile" accept=".log,.txt,.csv,.gz" style="display:none;" onchange="handleEchoLogUpload(event)">
           </label>
         </div>
@@ -1093,8 +1190,8 @@ function openResourceModal(type, existingItem = null) {
         <label>Target API URL</label>
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Latencia Mínima (ms)</label><input type="number" id="m-latencyMinMs" value="${item.latencyMinMs || ''}" placeholder="200"></div>
-          <div class="form-group"><label>Latencia Máxima (ms)</label><input type="number" id="m-latencyMaxMs" value="${item.latencyMaxMs || ''}" placeholder="2000"></div>
+          <div class="form-group"><label>Latencia Mínima (ms) (Opcional)</label><input type="number" id="m-latencyMinMs" value="${item.latencyMinMs || ''}" placeholder="200"></div>
+          <div class="form-group"><label>Latencia Máxima (ms) (Opcional)</label><input type="number" id="m-latencyMaxMs" value="${item.latencyMaxMs || ''}" placeholder="2000"></div>
         </div>
         <label>Vectores de Caos Avanzado</label>
         <div style="margin-top:0.5rem;">
@@ -1102,7 +1199,7 @@ function openResourceModal(type, existingItem = null) {
           <label><input type="checkbox" id="m-mode-gremlins" ${(item.modes || []).includes('gremlins') ? 'checked' : ''}> Gremlins (Corrupción de Headers/Body JSON)</label><br>
           <label><input type="checkbox" id="m-mode-blackout" ${(item.modes || []).includes('blackout') ? 'checked' : ''}> Blackout de Dependencias</label>
         </div>
-        <label>Dominios / Puertos a Aislar en Blackout</label>
+        <label>Dominios / Puertos a Aislar en Blackout (Opcional)</label>
         <input type="text" id="m-blackoutDomains" value="${escapeHtml(item.blackoutDomains || '')}" placeholder="ej: redis:6379, auth-service.internal">
       `;
       break;
@@ -1112,7 +1209,7 @@ function openResourceModal(type, existingItem = null) {
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
           <div class="form-group"><label>Swarm Size (Total Mosquitos)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="20"></div>
-          <div class="form-group"><label>Tráfico Normal (%)</label><input type="number" id="m-normalPct" value="${item.normalPct || ''}" placeholder="60"></div>
+          <div class="form-group"><label>Carga Normal (%) (Opcional)</label><input type="number" id="m-normalPct" value="${item.normalPct || ''}" placeholder="60"></div>
         </div>
       `;
       break;
@@ -1130,7 +1227,7 @@ function openResourceModal(type, existingItem = null) {
         <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://shop.tudominio.com">
         <div class="form-row">
           <div class="form-group"><label>Swarm Size (Usuarios Concurrentes)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="15"></div>
-          <div class="form-group"><label>Iteraciones por Usuario</label><input type="number" id="m-iterations" value="${item.iterations || ''}" placeholder="3"></div>
+          <div class="form-group"><label>Iteraciones por Usuario (Opcional)</label><input type="number" id="m-iterations" value="${item.iterations || ''}" placeholder="3"></div>
         </div>
         <label>Pasos del Flujo Stateful (separados por |)</label>
         <textarea id="m-steps" rows="3" placeholder="POST /api/login | EXTRACT $.token -> auth_token | GET /api/products | POST /api/checkout">${escapeHtml(item.steps || '')}</textarea>
@@ -1422,23 +1519,6 @@ function renderOnboarding() {
   `;
 }
 
-function renderSettings() {
-  $('views-container').innerHTML = `
-    <div class="view-header">
-      <div>
-        <h2>Ajustes de la Consola</h2>
-        <p>Configuración de la bóveda de almacenamiento y valores por defecto</p>
-      </div>
-    </div>
-    <div class="glass-card">
-      <label>Bóveda de Almacenamiento GitHub</label>
-      <input type="text" value=".maskito-storage" disabled>
-      <label>GitHub PAT Activo</label>
-      <input type="password" value="${state.token ? '••••••••••••••••••••••••' : ''}" disabled>
-    </div>
-  `;
-}
-
 // Global exports
 window.$ = $;
 window.renderView = renderView;
@@ -1453,6 +1533,11 @@ window.rerunRun = rerunRun;
 window.cancelRun = cancelRun;
 window.deleteRun = deleteRun;
 window.showRunDetailsModal = showRunDetailsModal;
+window.closeRunResultsModal = closeRunResultsModal;
+window.copyDatasetPreview = copyDatasetPreview;
+window.downloadDatasetPreview = downloadDatasetPreview;
+window.copyRunLogs = copyRunLogs;
+window.downloadRunLogs = downloadRunLogs;
 window.generateItemYaml = generateItemYaml;
 window.triggerQuickCreateModal = triggerQuickCreateModal;
 window.toggleAntennaInputMode = toggleAntennaInputMode;
