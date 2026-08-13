@@ -1,6 +1,6 @@
-// MASKITO Console App v3.0
-// Fully Integrated Engine with Direct GitHub API Workflow Injection,
-// Dynamic Antenna Template Selectors, Drag-and-Drop Schema Parser & Concurrency Guards.
+// MASKITO Console App v4.0
+// Fully Integrated Engine with Custom Dark-Theme UI Popups, Toasts, Prompts & Dialogs.
+// No native browser alert/prompt/confirm!
 
 const STORAGE_KEY_RES  = 'maskito_resources_v3';
 const STORAGE_KEY_RUNS = 'maskito_runs_v3';
@@ -114,6 +114,144 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// ─── CUSTOM UI POPUPS & TOAST SYSTEM (No native alert/prompt) ───────────────
+
+function showToast(message, type = 'info', durationMs = 4000) {
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const icons = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><div>${escapeHtml(message)}</div>`;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, durationMs);
+}
+
+function customAlert({ title = 'Maskito Alert', message = '', icon = 'ℹ️' }) {
+  return new Promise(resolve => {
+    const overlayHtml = `
+      <div id="custom-popup-overlay" class="modal-overlay custom-dialog-overlay">
+        <div class="modal-content" style="width:460px;">
+          <div class="modal-header">
+            <h3>${icon} ${escapeHtml(title)}</h3>
+            <button class="close-modal" id="popup-close-btn">&times;</button>
+          </div>
+          <div class="modal-body" style="font-size:0.95rem; line-height:1.5;">
+            ${escapeHtml(message).replace(/\n/g, '<br>')}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" id="popup-ok-btn">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const existing = $('custom-popup-overlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+    const close = () => {
+      $('custom-popup-overlay')?.remove();
+      resolve();
+    };
+
+    $('popup-close-btn').onclick = close;
+    $('popup-ok-btn').onclick = close;
+  });
+}
+
+function customConfirm({ title = 'Confirmar Acción', message = '', confirmText = 'Confirmar', cancelText = 'Cancelar', isDanger = false }) {
+  return new Promise(resolve => {
+    const overlayHtml = `
+      <div id="custom-popup-overlay" class="modal-overlay custom-dialog-overlay">
+        <div class="modal-content" style="width:480px;">
+          <div class="modal-header">
+            <h3>${isDanger ? '⚠️' : '❓'} ${escapeHtml(title)}</h3>
+            <button class="close-modal" id="popup-close-btn">&times;</button>
+          </div>
+          <div class="modal-body" style="font-size:0.95rem; line-height:1.5;">
+            ${escapeHtml(message).replace(/\n/g, '<br>')}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="popup-cancel-btn">${escapeHtml(cancelText)}</button>
+            <button class="btn ${isDanger ? 'btn-danger' : 'btn-primary'}" id="popup-confirm-btn">${escapeHtml(confirmText)}</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const existing = $('custom-popup-overlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+    const cleanup = (val) => {
+      $('custom-popup-overlay')?.remove();
+      resolve(val);
+    };
+
+    $('popup-close-btn').onclick = () => cleanup(false);
+    $('popup-cancel-btn').onclick = () => cleanup(false);
+    $('popup-confirm-btn').onclick = () => cleanup(true);
+  });
+}
+
+function customPrompt({ title = 'Ingresar Datos', message = '', fields = [], confirmText = 'Aceptar', cancelText = 'Cancelar' }) {
+  return new Promise(resolve => {
+    const fieldsHtml = fields.map(f => `
+      <label>${escapeHtml(f.label)}</label>
+      <input type="${f.type || 'text'}" id="p-field-${f.id}" value="${escapeHtml(f.value || '')}" placeholder="${escapeHtml(f.placeholder || '')}">
+    `).join('');
+
+    const overlayHtml = `
+      <div id="custom-popup-overlay" class="modal-overlay custom-dialog-overlay">
+        <div class="modal-content" style="width:520px;">
+          <div class="modal-header">
+            <h3>⚡ ${escapeHtml(title)}</h3>
+            <button class="close-modal" id="popup-close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            ${message ? `<p style="margin-bottom:1rem;">${escapeHtml(message)}</p>` : ''}
+            ${fieldsHtml}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="popup-cancel-btn">${escapeHtml(cancelText)}</button>
+            <button class="btn btn-primary" id="popup-confirm-btn">${escapeHtml(confirmText)}</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const existing = $('custom-popup-overlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+    const cleanup = (val) => {
+      $('custom-popup-overlay')?.remove();
+      resolve(val);
+    };
+
+    $('popup-close-btn').onclick = () => cleanup(null);
+    $('popup-cancel-btn').onclick = () => cleanup(null);
+    $('popup-confirm-btn').onclick = () => {
+      const res = {};
+      fields.forEach(f => {
+        res[f.id] = $(`p-field-${f.id}`)?.value?.trim() || '';
+      });
+      cleanup(res);
+    };
+  });
 }
 
 // ─── METADATA ───────────────────────────────────────────────────────────────
@@ -343,7 +481,7 @@ function initApp() {
   if (btnCopy) {
     btnCopy.addEventListener('click', () => {
       navigator.clipboard.writeText($('yaml-output').innerText);
-      alert('Copiado al portapapeles');
+      showToast('Copiado al portapapeles', 'success');
     });
   }
 
@@ -355,6 +493,7 @@ function initApp() {
       a.href = URL.createObjectURL(file);
       a.download = 'maskito-workflow.yml';
       a.click();
+      showToast('Archivo .yml descargado', 'success');
     });
   }
 
@@ -426,6 +565,7 @@ async function authenticate(token) {
     show($('main-console'));
     
     renderView('dashboard');
+    showToast(`Bóveda conectada como @${data.login}`, 'success');
   } catch (err) {
     showError(err.message || 'Error al conectar con GitHub');
     sessionStorage.removeItem('maskito_gh_token');
@@ -613,28 +753,42 @@ function getParamsSummary(type, item) {
   }
 }
 
-// ─── DIRECT GITHUB REPO WORKFLOW INJECTION ──────────────────────────────────
+// ─── DIRECT GITHUB REPO WORKFLOW INJECTION (With Custom Theme UI Dialog) ─────
 async function injectWorkflowToGitHubRepo() {
   const currentYaml = $('yaml-output')?.innerText;
   if (!currentYaml) return;
 
   if (!state.token) {
-    alert('Conecta tu GitHub Personal Access Token (PAT) en la consola para inyectar workflows directamente en cualquier repositorio.');
+    customAlert({
+      title: 'Conectar GitHub PAT',
+      message: 'Por favor, conecta tu Personal Access Token (PAT) de GitHub en la consola para inyectar workflows directamente en cualquier repositorio.',
+      icon: '🔒'
+    });
     return;
   }
 
-  const repoInput = prompt('Introduce el repositorio de GitHub destino donde inyectar el workflow (formato: usuario/repo-nombre):', state.targetRepo || `${state.user}/my-app`);
-  if (!repoInput) return;
-  state.targetRepo = repoInput.trim();
+  const promptResult = await customPrompt({
+    title: 'Inyectar Workflow a Repositorio GitHub',
+    message: 'Introduce el repositorio destino y el nombre del archivo workflow .yml:',
+    fields: [
+      { id: 'repo', label: 'Repositorio Destino (formato: usuario/nombre-repo)', value: state.targetRepo || `${state.user}/my-app`, placeholder: 'usuario/mi-proyecto' },
+      { id: 'filename', label: 'Nombre del archivo .yml en .github/workflows/', value: 'maskito-workflow.yml', placeholder: 'maskito-horde.yml' }
+    ],
+    confirmText: '⚡ Inyectar Ahora',
+    cancelText: 'Cancelar'
+  });
 
-  const workflowNameInput = prompt('Nombre del archivo .yml en .github/workflows/:', 'maskito-workflow.yml');
-  if (!workflowNameInput) return;
+  if (!promptResult || !promptResult.repo || !promptResult.filename) return;
+
+  state.targetRepo = promptResult.repo.trim();
+  const filename = promptResult.filename.trim();
+  const filePath = `.github/workflows/${filename.endsWith('.yml') ? filename : filename + '.yml'}`;
 
   const btnInject = $('btn-inject-repo');
   if (btnInject) btnInject.innerText = '⚡ Inyectando...';
+  showToast(`⚡ Inyectando ${filePath} en ${state.targetRepo}...`, 'info');
 
   try {
-    const filePath = `.github/workflows/${workflowNameInput.endsWith('.yml') ? workflowNameInput : workflowNameInput + '.yml'}`;
     const url = `https://api.github.com/repos/${state.targetRepo}/contents/${filePath}`;
     
     // Check if file exists to get SHA for update
@@ -647,7 +801,7 @@ async function injectWorkflowToGitHubRepo() {
       }
     } catch (e) {}
 
-    // Base64 encode YAML content
+    // Base64 encode YAML content safely
     const contentEncoded = btoa(unescape(encodeURIComponent(currentYaml)));
 
     const putRes = await fetch(url, {
@@ -668,9 +822,19 @@ async function injectWorkflowToGitHubRepo() {
       throw new Error(errData.message || `HTTP ${putRes.status}`);
     }
 
-    alert(`✅ ¡Éxito! Workflow inyectado correctamente en:\nhttps://github.com/${state.targetRepo}/tree/main/${filePath}`);
+    customAlert({
+      title: 'Workflow Inyectado Exitosamente',
+      message: `El archivo ${filePath} ha sido inyectado correctamente en el repositorio:\nhttps://github.com/${state.targetRepo}/tree/main/${filePath}`,
+      icon: '✅'
+    });
+    showToast(`✅ Workflow ${filePath} inyectado con éxito`, 'success');
   } catch (err) {
-    alert(`❌ Error al inyectar workflow en GitHub: ${err.message}`);
+    customAlert({
+      title: 'Error de Inyección',
+      message: `No se pudo inyectar el workflow en ${state.targetRepo}:\n${err.message}`,
+      icon: '❌'
+    });
+    showToast(`❌ Error: ${err.message}`, 'error');
   } finally {
     if (btnInject) btnInject.innerText = '⚡ Inyectar a Repo GitHub';
   }
@@ -681,10 +845,9 @@ function executeResource(type, resourceId) {
   const item = (state.resources[type] || []).find(r => r.id === resourceId);
   if (!item) return;
 
-  // Swarm concurrency warning check for Free GitHub accounts (>20 parallel runners)
   const swarmCount = parseInt(item.swarmSize || '10', 10);
   if (swarmCount > 20) {
-    alert(`💡 Nota sobre cuentas Free de GitHub:\nHas solicitado ${swarmCount} mosquitos simultáneos. En cuentas gratuitas de GitHub, GitHub ejecuta 20 mosquitos en paralelo inmediato y pone los ${swarmCount - 20} restantes en cola automáticamente.`);
+    showToast(`💡 Nota: GitHub Free ejecuta 20 mosquitos en paralelo y el resto en cola`, 'warning', 5000);
   }
 
   const newRun = {
@@ -715,7 +878,7 @@ function executeResource(type, resourceId) {
     }).catch(() => {});
   }
 
-  alert(`🚀 Ejecución iniciada: ${item.name} (${newRun.id})\nPuedes ver el progreso en la pestaña de Runs.`);
+  showToast(`🚀 Ejecución iniciada: ${item.name} (${newRun.id})`, 'success');
   switchNav('runs');
 }
 
@@ -739,26 +902,44 @@ function rerunRun(runId) {
   state.runs.unshift(newRun);
   saveStorage(STORAGE_KEY_RUNS, state.runs);
   renderView('runs');
-  alert(`🔄 Re-ejecución iniciada: ${existingRun.name} (${newRun.id})`);
+  showToast(`🔄 Re-ejecución iniciada: ${existingRun.name}`, 'success');
 }
 
-function cancelRun(runId) {
+async function cancelRun(runId) {
   const run = state.runs.find(r => r.id === runId);
   if (run && run.status === 'running') {
-    if (confirm(`¿Deseas cancelar la ejecución "${run.name}"?`)) {
+    const confirmed = await customConfirm({
+      title: 'Cancelar Prueba en Curso',
+      message: `¿Seguro que deseas cancelar la ejecución "${run.name}" (${run.id})?`,
+      confirmText: 'Sí, Cancelar Prueba',
+      cancelText: 'Volver',
+      isDanger: true
+    });
+
+    if (confirmed) {
       run.status = 'cancelled';
       run.completedAt = new Date().toISOString();
       saveStorage(STORAGE_KEY_RUNS, state.runs);
       renderView('runs');
+      showToast(`🛑 Prueba ${run.id} cancelada`, 'warning');
     }
   }
 }
 
-function deleteRun(runId) {
-  if (confirm('¿Deseas eliminar este registro de ejecución?')) {
+async function deleteRun(runId) {
+  const confirmed = await customConfirm({
+    title: 'Eliminar Registro de Ejecución',
+    message: '¿Seguro que deseas eliminar este registro del histórico de ejecuciones?',
+    confirmText: 'Sí, Eliminar',
+    cancelText: 'Cancelar',
+    isDanger: true
+  });
+
+  if (confirmed) {
     state.runs = state.runs.filter(r => r.id !== runId);
     saveStorage(STORAGE_KEY_RUNS, state.runs);
     renderView('runs');
+    showToast('Registro de ejecución eliminado', 'info');
   }
 }
 
@@ -866,7 +1047,6 @@ function openResourceModal(type, existingItem = null) {
   const meta = FuncMeta[type];
   const item = existingItem || {};
 
-  // Build Template Selector options (Antenna schemas)
   const templateOptionsHtml = state.templates.map(t =>
     `<option value="${t.id}" ${item.templateId === t.id ? 'selected' : ''}>${escapeHtml(t.name)} (${t.entitiesCount || 2} entidades)</option>`
   ).join('');
@@ -876,7 +1056,6 @@ function openResourceModal(type, existingItem = null) {
     <input type="text" id="m-name" value="${escapeHtml(item.name || meta.name + ' Config')}" placeholder="Nombre descriptivo">
   `;
 
-  // Insert Template Selector for functions that build on top of Antenna
   if (['larva', 'venom', 'horde', 'siege', 'toxin', 'epidemic', 'hunter'].includes(type)) {
     fieldsHtml += `
       <label>Plantilla Base de Schema (Antenna)</label>
@@ -1091,7 +1270,7 @@ function handleSpecFileUpload(evt) {
     const reader = new FileReader();
     reader.onload = (e) => {
       window.uploadedSpecContent = e.target.result;
-      alert(`✅ Archivo "${file.name}" cargado correctamente (${file.size} bytes).`);
+      showToast(`Archivo "${file.name}" cargado (${file.size} bytes)`, 'success');
     };
     reader.readAsText(file);
   }
@@ -1120,7 +1299,6 @@ function saveResourceModalForm(type) {
     case 'antenna':
       updated.specUrl = $('m-specUrl')?.value?.trim() || 'Custom Spec';
       updated.specCode = $('m-specCode')?.value || window.uploadedSpecContent || '';
-      // Create a new Antenna Template entry as well
       const newTpl = {
         id: `tpl_${Date.now()}`,
         name: updated.name,
@@ -1195,8 +1373,10 @@ function saveResourceModalForm(type) {
   if (isEdit) {
     const idx = state.resources[type].findIndex(r => r.id === newId);
     if (idx !== -1) state.resources[type][idx] = updated;
+    showToast(`Recurso "${updated.name}" actualizado`, 'success');
   } else {
     state.resources[type].push(updated);
+    showToast(`Recurso "${updated.name}" creado con éxito`, 'success');
   }
 
   saveStorage(STORAGE_KEY_RES, state.resources);
@@ -1209,11 +1389,23 @@ function editResource(type, id) {
   if (item) openResourceModal(type, item);
 }
 
-function deleteResource(type, id) {
-  if (confirm('¿Seguro que deseas eliminar este recurso?')) {
+async function deleteResource(type, id) {
+  const item = (state.resources[type] || []).find(r => r.id === id);
+  const name = item ? item.name : 'este recurso';
+
+  const confirmed = await customConfirm({
+    title: 'Eliminar Recurso',
+    message: `¿Seguro que deseas eliminar "${name}"? Esta acción no se puede deshacer.`,
+    confirmText: 'Sí, Eliminar',
+    cancelText: 'Cancelar',
+    isDanger: true
+  });
+
+  if (confirmed) {
     state.resources[type] = (state.resources[type] || []).filter(r => r.id !== id);
     saveStorage(STORAGE_KEY_RES, state.resources);
     renderView(state.currentView);
+    showToast(`Recurso "${name}" eliminado`, 'info');
   }
 }
 
@@ -1236,12 +1428,24 @@ function switchNav(viewName) {
   renderView(viewName);
 }
 
-function triggerQuickCreateModal() {
-  const type = prompt('Ingresa el tipo de función a crear (ej: horde, siege, toxin, hunter, larva...):', 'horde');
-  if (type && FuncMeta[type]) {
-    openResourceModal(type);
-  } else if (type) {
-    alert('Tipo no reconocido. Opciones: ' + Object.keys(FuncMeta).join(', '));
+async function triggerQuickCreateModal() {
+  const result = await customPrompt({
+    title: 'Crear Nuevo Recurso',
+    message: 'Ingresa el nombre del tipo de función a crear (ej: horde, siege, toxin, hunter, larva, antenna...):',
+    fields: [
+      { id: 'type', label: 'Tipo de Función', value: 'horde', placeholder: 'horde' }
+    ],
+    confirmText: 'Continuar',
+    cancelText: 'Cancelar'
+  });
+
+  if (result && result.type) {
+    const type = result.type.toLowerCase().trim();
+    if (FuncMeta[type]) {
+      openResourceModal(type);
+    } else {
+      showToast(`Tipo "${type}" no reconocido. Opciones: ${Object.keys(FuncMeta).join(', ')}`, 'error', 5000);
+    }
   }
 }
 
