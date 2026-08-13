@@ -301,6 +301,50 @@ code, pre { font-family: 'JetBrains Mono', monospace; }
   gap: 0.4rem;
 }
 
+/* STATUS BADGES */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.completed {
+  background: rgba(46, 164, 79, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(46, 164, 79, 0.3);
+}
+
+.status-badge.running {
+  background: rgba(219, 171, 9, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(219, 171, 9, 0.4);
+  animation: pulse-border 1.5s infinite;
+}
+
+.status-badge.cancelled {
+  background: rgba(170, 170, 170, 0.15);
+  color: var(--text-dim);
+  border: 1px solid rgba(170, 170, 170, 0.3);
+}
+
+.status-badge.failed {
+  background: rgba(203, 36, 49, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(203, 36, 49, 0.4);
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(219, 171, 9, 0.4); }
+  50% { border-color: var(--warning); }
+  100% { border-color: rgba(219, 171, 9, 0.4); }
+}
+
 /* FORM STYLES */
 label {
   display: block;
@@ -359,6 +403,28 @@ input:focus, select:focus, textarea:focus {
 .btn-primary:hover {
   background-color: var(--accent);
   box-shadow: 0 0 12px rgba(255, 26, 51, 0.4);
+}
+
+.btn-success {
+  background-color: rgba(46, 164, 79, 0.2);
+  color: #5cdb95;
+  border: 1px solid rgba(46, 164, 79, 0.4);
+}
+
+.btn-success:hover {
+  background-color: var(--success);
+  color: white;
+}
+
+.btn-warning {
+  background-color: rgba(219, 171, 9, 0.2);
+  color: #ffe066;
+  border: 1px solid rgba(219, 171, 9, 0.4);
+}
+
+.btn-warning:hover {
+  background-color: var(--warning);
+  color: black;
 }
 
 .btn-secondary {

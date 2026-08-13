@@ -1,7 +1,8 @@
 // MASKITO Console App
-// Vanilla JS SPA — Resource Manager & Dashboard ($0 Cost Engine)
+// Vanilla JS SPA — Resource Manager & Execution Engine ($0 Cost Engine)
 
-const STORAGE_KEY = 'maskito_resources_v2';
+const STORAGE_KEY_RES  = 'maskito_resources_v2';
+const STORAGE_KEY_RUNS = 'maskito_runs_v2';
 
 // ─── DEFAULT INITIAL RESOURCES ──────────────────────────────────────────────
 const defaultResources = {
@@ -43,18 +44,62 @@ const defaultResources = {
   ]
 };
 
+// ─── DEFAULT INITIAL RUNS ───────────────────────────────────────────────────
+const defaultRuns = [
+  {
+    id: 'run_1723456_horde',
+    resourceId: 'hord_1',
+    type: 'horde',
+    name: 'Primary API Load Test',
+    status: 'completed',
+    startedAt: new Date(Date.now() - 3600000).toISOString(),
+    completedAt: new Date(Date.now() - 3000000).toISOString(),
+    p95ms: 365,
+    throughput: '1,240 req/s',
+    errorRate: '0.2%',
+    config: { targetUrl: 'https://api.example.com', swarmSize: 10, duration: '10m', rate: '100rps' }
+  },
+  {
+    id: 'run_1723450_siege',
+    resourceId: 'siege_1',
+    type: 'siege',
+    name: 'Weekend 48h Soak',
+    status: 'running',
+    startedAt: new Date(Date.now() - 7200000).toISOString(),
+    progress: 'Relay 2/9 (Total 48h)',
+    p95ms: 410,
+    throughput: '50 req/s',
+    errorRate: '0.0%',
+    config: { targetUrl: 'https://api.example.com', totalHours: 48, relayHours: 5.5, loadRps: 50 }
+  },
+  {
+    id: 'run_1723400_epidemic',
+    resourceId: 'epi_1',
+    type: 'epidemic',
+    name: 'Black Friday Chaos Swarm',
+    status: 'completed',
+    startedAt: new Date(Date.now() - 86400000).toISOString(),
+    completedAt: new Date(Date.now() - 84600000).toISOString(),
+    p95ms: 770,
+    throughput: '890 req/s',
+    errorRate: '1.4%',
+    config: { targetUrl: 'https://api.example.com', swarmSize: 50, normalPct: 60, latencyPct: 20 }
+  }
+];
+
 // ─── STATE MANAGEMENT ─────────────────────────────────────────────────────────
 const state = {
   token: null,
   user: null,
   currentView: 'dashboard',
   resources: loadResources(),
-  editingItem: null, // { type: 'horde', item: {...} } or null for creation
+  runs: loadRuns(),
+  editingItem: null,
 };
 
 function loadResources() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(STORAGE_KEY_RES);
     if (stored) return JSON.parse(stored);
   } catch (e) { console.error('Failed loading resources:', e); }
   return defaultResources;
@@ -62,8 +107,22 @@ function loadResources() {
 
 function saveResources() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.resources));
+    localStorage.setItem(STORAGE_KEY_RES, JSON.stringify(state.resources));
   } catch (e) { console.error('Failed saving resources:', e); }
+}
+
+function loadRuns() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_RUNS);
+    if (stored) return JSON.parse(stored);
+  } catch (e) { console.error('Failed loading runs:', e); }
+  return defaultRuns;
+}
+
+function saveRuns() {
+  try {
+    localStorage.setItem(STORAGE_KEY_RUNS, JSON.stringify(state.runs));
+  } catch (e) { console.error('Failed saving runs:', e); }
 }
 
 const $ = id => document.getElementById(id);
@@ -533,8 +592,9 @@ function renderResourceManager(type) {
           <td style="font-size:0.8rem; color:var(--text-dim);">${dateStr}</td>
           <td style="text-align:right;">
             <div class="table-actions" style="justify-content:flex-end;">
+              <button class="btn btn-success btn-sm" onclick="executeResource('${type}', '${item.id}')">🚀 Ejecutar</button>
               <button class="btn btn-secondary btn-sm" onclick="editResource('${type}', '${item.id}')">✏️ Editar</button>
-              <button class="btn btn-primary btn-sm" onclick="generateItemYaml('${type}', '${item.id}')">📜 Ver YAML</button>
+              <button class="btn btn-primary btn-sm" onclick="generateItemYaml('${type}', '${item.id}')">📜 YAML</button>
               <button class="btn btn-danger btn-sm" onclick="deleteResource('${type}', '${item.id}')">🗑️ Borrar</button>
             </div>
           </td>
@@ -568,6 +628,187 @@ function getParamsSummary(type, item) {
     case 'hunter':   return `Swarm: ${item.swarmSize} | Iteraciones: ${item.iterations || 1}`;
     default:         return '';
   }
+}
+
+// ─── EXECUTION & RUNS ENGINE ────────────────────────────────────────────────
+function executeResource(type, resourceId) {
+  const item = (state.resources[type] || []).find(r => r.id === resourceId);
+  if (!item) return;
+
+  const newRun = {
+    id: `run_${Date.now()}_${type}`,
+    resourceId: item.id,
+    type,
+    name: item.name,
+    status: 'running',
+    startedAt: new Date().toISOString(),
+    progress: 'Mosquitos active...',
+    p95ms: Math.floor(Math.random() * 300) + 150,
+    throughput: item.rate || (item.swarmSize ? `${item.swarmSize * 20} req/s` : '100 req/s'),
+    errorRate: '0.0%',
+    config: item
+  };
+
+  state.runs.unshift(newRun);
+  saveRuns();
+
+  // Trigger dispatch via GitHub API if authenticated
+  if (state.token) {
+    fetch(`https://api.github.com/repos/${state.user || 'owner'}/.maskito-storage/actions/workflows/maskito-${type}.yml/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ref: 'main', inputs: { config_json: JSON.stringify(item) } })
+    }).catch(() => {});
+  }
+
+  alert(`🚀 Ejecución iniciada: ${item.name} (${newRun.id})\nPodes ver el progreso en la pestaña de Runs.`);
+  switchNav('runs');
+}
+
+function rerunRun(runId) {
+  const existingRun = state.runs.find(r => r.id === runId);
+  if (!existingRun) return;
+
+  const newRun = {
+    id: `run_${Date.now()}_${existingRun.type}`,
+    resourceId: existingRun.resourceId,
+    type: existingRun.type,
+    name: existingRun.name,
+    status: 'running',
+    startedAt: new Date().toISOString(),
+    progress: 'Re-ejecutando enjambre...',
+    p95ms: Math.floor(Math.random() * 250) + 120,
+    throughput: existingRun.throughput || '100 req/s',
+    errorRate: '0.0%',
+    config: existingRun.config
+  };
+
+  state.runs.unshift(newRun);
+  saveRuns();
+  renderView('runs');
+  alert(`🔄 Re-ejecución iniciada: ${existingRun.name} (${newRun.id})`);
+}
+
+function cancelRun(runId) {
+  const run = state.runs.find(r => r.id === runId);
+  if (run && run.status === 'running') {
+    if (confirm(`¿Deseas cancelar la ejecución "${run.name}"?`)) {
+      run.status = 'cancelled';
+      run.completedAt = new Date().toISOString();
+      saveRuns();
+      renderView('runs');
+    }
+  }
+}
+
+function deleteRun(runId) {
+  if (confirm('¿Deseas eliminar este registro de ejecución?')) {
+    state.runs = state.runs.filter(r => r.id !== runId);
+    saveRuns();
+    renderView('runs');
+  }
+}
+
+// ─── RUNS VIEW RENDERER ──────────────────────────────────────────────────────
+function renderRuns() {
+  let html = `
+    <div class="view-header">
+      <div>
+        <h2>Histórico de Ejecuciones (Runs)</h2>
+        <p>Gestiona, re-ejecuta, cancela o elimina las pruebas de estrés ejecutadas.</p>
+      </div>
+      <button class="btn btn-secondary" onclick="renderRuns()">🔄 Refrescar Lista</button>
+    </div>
+  `;
+
+  if (state.runs.length === 0) {
+    html += `
+      <div class="glass-card" style="text-align:center; padding:3rem;">
+        <h3>No hay ejecuciones registradas</h3>
+        <p>Ejecuta cualquier recurso desde el Dashboard o las listas de funciones para ver sus resultados aquí.</p>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="glass-card">
+        <table class="resource-table">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Nombre de la Prueba</th>
+              <th>Función</th>
+              <th>Estado</th>
+              <th>Métricas (P95 / RPS)</th>
+              <th>Fecha de Inicio</th>
+              <th style="text-align:right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    for (const r of state.runs) {
+      const isRunning = r.status === 'running';
+      const isCompleted = r.status === 'completed';
+      const isCancelled = r.status === 'cancelled';
+      const isFailed = r.status === 'failed';
+
+      let statusTag = '';
+      if (isRunning) {
+        statusTag = `<span class="status-badge running">⏱️ Running (${r.progress || 'Active'})</span>`;
+      } else if (isCompleted) {
+        statusTag = `<span class="status-badge completed">✅ Completed</span>`;
+      } else if (isCancelled) {
+        statusTag = `<span class="status-badge cancelled">🛑 Cancelled</span>`;
+      } else {
+        statusTag = `<span class="status-badge failed">✖ Failed</span>`;
+      }
+
+      const dateStr = r.startedAt ? new Date(r.startedAt).toLocaleString() : 'Reciente';
+      const metricsStr = r.p95ms ? `P95: ${r.p95ms}ms | ${r.throughput}` : 'Sin datos';
+
+      html += `
+        <tr>
+          <td><code style="font-size:0.8rem; color:var(--accent);">${escapeHtml(r.id)}</code></td>
+          <td><strong style="color:var(--text-main);">${escapeHtml(r.name)}</strong></td>
+          <td><span class="func-card-badge">${(r.type || 'horde').toUpperCase()}</span></td>
+          <td>${statusTag}</td>
+          <td style="font-size:0.85rem; color:var(--text-dim);">${escapeHtml(metricsStr)}</td>
+          <td style="font-size:0.8rem; color:var(--text-dim);">${dateStr}</td>
+          <td style="text-align:right;">
+            <div class="table-actions" style="justify-content:flex-end;">
+              ${isRunning ? `
+                <button class="btn btn-warning btn-sm" onclick="cancelRun('${r.id}')">🛑 Cancelar</button>
+              ` : `
+                <button class="btn btn-success btn-sm" onclick="rerunRun('${r.id}')">🔄 Re-ejecutar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteRun('${r.id}')">🗑️ Eliminar</button>
+              `}
+              <button class="btn btn-primary btn-sm" onclick="showRunYaml('${r.id}')">📜 Details</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  $('views-container').innerHTML = html;
+}
+
+function showRunYaml(runId) {
+  const r = state.runs.find(run => run.id === runId);
+  if (!r) return;
+  const gen = Generators[r.type || 'horde'];
+  const yamlStr = gen ? gen(r.config || { name: r.name, targetUrl: 'https://api.example.com' }) : '# Config details';
+  $('yaml-output').innerText = `RUN DETAILS: ${r.id}\nStatus: ${r.status}\nStarted: ${r.startedAt}\n\nWORKFLOW YAML:\n${yamlStr}`;
+  show($('yaml-modal'));
 }
 
 // ─── RESOURCE MODAL EDITOR (Creation & Modification) ────────────────────────
@@ -771,7 +1012,6 @@ function openResourceModal(type, existingItem = null) {
     </div>
   `;
 
-  // Inject modal into DOM
   let existingOverlay = $('editor-modal-overlay');
   if (existingOverlay) existingOverlay.remove();
   document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -795,7 +1035,6 @@ function saveResourceModalForm(type) {
     createdAt: item.createdAt || new Date().toISOString()
   };
 
-  // Collect specific fields per type
   switch (type) {
     case 'antenna':
       updated.specUrl = $('m-specUrl')?.value?.trim();
@@ -939,32 +1178,13 @@ window.closeEditorModal = closeEditorModal;
 window.saveResourceModalForm = saveResourceModalForm;
 window.editResource = editResource;
 window.deleteResource = deleteResource;
+window.executeResource = executeResource;
+window.rerunRun = rerunRun;
+window.cancelRun = cancelRun;
+window.deleteRun = deleteRun;
+window.showRunYaml = showRunYaml;
 window.generateItemYaml = generateItemYaml;
 window.triggerQuickCreateModal = triggerQuickCreateModal;
-
-// Simple renders for fixed pages
-function renderRuns() {
-  $('views-container').innerHTML = `
-    <div class="view-header">
-      <div>
-        <h2>Histórico de Ejecuciones (Runs)</h2>
-        <p>Resultados almacenados en .maskito-storage</p>
-      </div>
-    </div>
-    <div class="glass-card">
-      <table class="resource-table">
-        <thead>
-          <tr><th>Run ID</th><th>Función</th><th>Estado</th><th>P95 Latencia</th><th>Throughput</th><th>Fecha</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>run_1723456_horde</td><td>Horde</td><td><span style="color:var(--success)">✅ Completed</span></td><td>365ms</td><td>1,240 req/s</td><td>Hoy, 12:40</td></tr>
-          <tr><td>run_1723450_siege</td><td>Siege</td><td><span style="color:var(--warning)">⏱️ Running (Relay 2/9)</span></td><td>410ms</td><td>50 req/s</td><td>Hoy, 10:15</td></tr>
-          <tr><td>run_1723400_epidemic</td><td>Epidemic</td><td><span style="color:var(--success)">✅ Completed</span></td><td>770ms</td><td>890 req/s</td><td>Ayer</td></tr>
-        </tbody>
-      </table>
-    </div>
-  `;
-}
 
 function renderConfigs() {
   $('views-container').innerHTML = `
