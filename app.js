@@ -70,6 +70,16 @@ const $ = id => document.getElementById(id);
 const show = el => el && el.classList.remove('hidden');
 const hide = el => el && el.classList.add('hidden');
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ─── FUNCTION DEFINITIONS METADATA ───────────────────────────────────────────
 const FuncMeta = {
   antenna:  { name: 'Antenna', group: 'breed', groupLabel: '🧬 BREED', desc: 'Schema Reader — Lee OpenAPI/Swagger y genera plantillas YAML' },
@@ -286,10 +296,10 @@ function initApp() {
   // Navigation handlers
   document.querySelectorAll('.nav-item').forEach(el => {
     el.addEventListener('click', (e) => {
+      const navItem = e.target.closest('.nav-item') || el;
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const target = e.currentTarget || e.target;
-      target.classList.add('active');
-      const view = target.getAttribute('data-view');
+      navItem.classList.add('active');
+      const view = navItem.getAttribute('data-view');
       if (view) renderView(view);
     });
   });
