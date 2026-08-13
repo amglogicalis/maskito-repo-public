@@ -1,30 +1,31 @@
-// MASKITO Console App v4.0
-// Fully Integrated Engine with Custom Dark-Theme UI Popups, Toasts, Prompts & Dialogs.
-// No native browser alert/prompt/confirm!
+// MASKITO Console App v5.0
+// Comprehensive Stress Testing & Synthetic Data Engine
+// Includes Onboarding Guide, Deep Run Metrics/Data Outputs, Live Drag & Drop Log Uploaders,
+// Advanced Chaos & Seed Configs, and Clean Input Placeholders.
 
-const STORAGE_KEY_RES  = 'maskito_resources_v3';
-const STORAGE_KEY_RUNS = 'maskito_runs_v3';
-const STORAGE_KEY_TEMPLATES = 'maskito_templates_v3';
+const STORAGE_KEY_RES  = 'maskito_resources_v5';
+const STORAGE_KEY_RUNS = 'maskito_runs_v5';
+const STORAGE_KEY_TEMPLATES = 'maskito_templates_v5';
 
-// ─── DEFAULT TEMPLATES (Antenna Schemas) ────────────────────────────────────
+// ─── DEFAULT TEMPLATES ──────────────────────────────────────────────────────
 const defaultTemplates = [
   { id: 'tpl_ecommerce', name: 'E-commerce API Schema', specUrl: 'https://petstore.swagger.io/v2/swagger.json', entitiesCount: 4, createdAt: new Date().toISOString() },
   { id: 'tpl_auth', name: 'Auth & User Service Schema', specUrl: 'https://express-auth.swagger.json', entitiesCount: 2, createdAt: new Date().toISOString() }
 ];
 
-// ─── DEFAULT INITIAL RESOURCES ──────────────────────────────────────────────
+// ─── DEFAULT RESOURCES ──────────────────────────────────────────────────────
 const defaultResources = {
   antenna: [
     { id: 'ant_1', name: 'PetStore OpenAPI Spec', specUrl: 'https://petstore.swagger.io/v2/swagger.json', templateId: 'tpl_ecommerce', createdAt: new Date().toISOString() }
   ],
   larva: [
-    { id: 'larv_1', name: 'Users & Orders Seed Data', templateId: 'tpl_ecommerce', format: 'sql', count: 500, databaseUrl: '', createdAt: new Date().toISOString() }
+    { id: 'larv_1', name: 'Users & Orders Seed Data', templateId: 'tpl_ecommerce', format: 'json', count: 1000, distributions: 'price: gaussian(80,20), category: enum(40% clothing, 60% tech)', fkMapping: 'orders.user_id -> users.id', createdAt: new Date().toISOString() }
   ],
   venom: [
-    { id: 'ven_1', name: 'Auth Fuzzing Payloads', templateId: 'tpl_auth', modes: ['boundary', 'unicode', 'injection'], outputPath: 'venom-payloads.json', createdAt: new Date().toISOString() }
+    { id: 'ven_1', name: 'Auth Fuzzing Payloads', templateId: 'tpl_auth', intensityPct: 50, modes: ['boundary', 'unicode', 'injection', 'headers'], outputPath: 'venom-payloads.json', createdAt: new Date().toISOString() }
   ],
   horde: [
-    { id: 'hord_1', name: 'Primary API Load Test', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', swarmSize: 15, duration: '10m', rate: '100rps', authType: 'bearer', authToken: '${{ secrets.API_TOKEN }}', createdAt: new Date().toISOString() }
+    { id: 'hord_1', name: 'Primary API Load Test', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', swarmSize: 15, duration: '10m', rate: '100rps', createdAt: new Date().toISOString() }
   ],
   siege: [
     { id: 'siege_1', name: 'Weekend 48h Soak Test', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', totalHours: 48, relayHours: 5.5, loadRps: 50, swarmSize: 3, createdAt: new Date().toISOString() }
@@ -39,13 +40,13 @@ const defaultResources = {
     { id: 'echo_1', name: 'Prod Nginx Log Replay', targetUrl: 'https://staging.example.com', logPath: 's3://logs/prod-nginx.log', speed: 2, createdAt: new Date().toISOString() }
   ],
   toxin: [
-    { id: 'tox_1', name: 'Random Chaos Inoculation', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', modes: ['latency', 'gremlins'], latencyMs: 500, gremlinsRate: 0.3, createdAt: new Date().toISOString() }
+    { id: 'tox_1', name: 'Random Chaos Inoculation', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', modes: ['latency', 'gremlins'], latencyMinMs: 200, latencyMaxMs: 2000, gremlinsVector: 'corrupt_headers', blackoutDomains: 'redis:6379, auth-service.internal', createdAt: new Date().toISOString() }
   ],
   epidemic: [
     { id: 'epi_1', name: 'Black Friday Chaos Swarm', templateId: 'tpl_ecommerce', targetUrl: 'https://api.example.com', swarmSize: 20, normalPct: 60, latencyPct: 20, venomPct: 10, blackoutPct: 10, duration: '30m', createdAt: new Date().toISOString() }
   ],
   cascade: [
-    { id: 'casc_1', name: 'Microservices Failure Mapping', services: 'Auth:8080, Catalog:3001, Cart:4000, Orders:5000', loadRps: 50, killDurationSec: 30, recoveryWaitSec: 15, createdAt: new Date().toISOString() }
+    { id: 'casc_1', name: 'Microservices Failure Mapping', clusterUrl: 'https://staging-cluster.internal.com', services: 'Auth:8080 (mock_503), Catalog:3001 (shutdown_api), Cart:4000 (docker_stop)', loadRps: 50, killDurationSec: 30, recoveryWaitSec: 15, createdAt: new Date().toISOString() }
   ],
   hunter: [
     { id: 'hunt_1', name: 'Full Purchase User Journey', templateId: 'tpl_ecommerce', targetUrl: 'https://shop.example.com', steps: 'POST /api/login | EXTRACT $.token -> auth_token | GET /api/products | POST /api/checkout', swarmSize: 15, iterations: 3, createdAt: new Date().toISOString() }
@@ -61,9 +62,24 @@ const defaultRuns = [
     status: 'completed',
     startedAt: new Date(Date.now() - 3600000).toISOString(),
     completedAt: new Date(Date.now() - 3000000).toISOString(),
+    p50ms: 120,
     p95ms: 365,
+    p99ms: 540,
     throughput: '1,240 req/s',
+    errorRate: '0.2%',
+    regression: 'normal',
     config: { targetUrl: 'https://api.example.com', swarmSize: 15, duration: '10m' }
+  },
+  {
+    id: 'run_1723452_larva',
+    type: 'larva',
+    name: 'Users & Orders Seed Data',
+    status: 'completed',
+    startedAt: new Date(Date.now() - 5400000).toISOString(),
+    completedAt: new Date(Date.now() - 5300000).toISOString(),
+    recordsGenerated: 1000,
+    datasetPreview: `[\n  { "id": "usr_99182", "name": "Elena Rostova", "email": "elena@domain.com", "price_avg": 84.50 },\n  { "id": "usr_99183", "name": "Carlos Gomez", "email": "carlos@domain.com", "price_avg": 112.30 }\n]`,
+    config: { format: 'json', count: 1000 }
   },
   {
     id: 'run_1723450_siege',
@@ -71,9 +87,13 @@ const defaultRuns = [
     name: 'Weekend 48h Soak Test',
     status: 'running',
     startedAt: new Date(Date.now() - 7200000).toISOString(),
-    progress: 'Relay 2/9 (Total 48h)',
+    progressPct: 35,
+    progress: 'Relay 3/9 (Total 48h)',
+    p50ms: 180,
     p95ms: 410,
+    p99ms: 620,
     throughput: '50 req/s',
+    errorRate: '0.0%',
     config: { targetUrl: 'https://api.example.com', totalHours: 48 }
   }
 ];
@@ -82,7 +102,7 @@ const defaultRuns = [
 const state = {
   token: null,
   user: null,
-  targetRepo: '', // e.g. owner/my-app
+  targetRepo: '',
   currentView: 'dashboard',
   templates: loadStorage(STORAGE_KEY_TEMPLATES, defaultTemplates),
   resources: loadStorage(STORAGE_KEY_RES, defaultResources),
@@ -116,7 +136,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// ─── CUSTOM UI POPUPS & TOAST SYSTEM (No native alert/prompt) ───────────────
+// ─── CUSTOM UI POPUPS & TOAST SYSTEM ─────────────────────────────────────────
 
 function showToast(message, type = 'info', durationMs = 4000) {
   let container = document.querySelector('.toast-container');
@@ -162,11 +182,7 @@ function customAlert({ title = 'Maskito Alert', message = '', icon = 'ℹ️' })
     if (existing) existing.remove();
     document.body.insertAdjacentHTML('beforeend', overlayHtml);
 
-    const close = () => {
-      $('custom-popup-overlay')?.remove();
-      resolve();
-    };
-
+    const close = () => { $('custom-popup-overlay')?.remove(); resolve(); };
     $('popup-close-btn').onclick = close;
     $('popup-ok-btn').onclick = close;
   });
@@ -196,11 +212,7 @@ function customConfirm({ title = 'Confirmar Acción', message = '', confirmText 
     if (existing) existing.remove();
     document.body.insertAdjacentHTML('beforeend', overlayHtml);
 
-    const cleanup = (val) => {
-      $('custom-popup-overlay')?.remove();
-      resolve(val);
-    };
-
+    const cleanup = (val) => { $('custom-popup-overlay')?.remove(); resolve(val); };
     $('popup-close-btn').onclick = () => cleanup(false);
     $('popup-cancel-btn').onclick = () => cleanup(false);
     $('popup-confirm-btn').onclick = () => cleanup(true);
@@ -237,18 +249,12 @@ function customPrompt({ title = 'Ingresar Datos', message = '', fields = [], con
     if (existing) existing.remove();
     document.body.insertAdjacentHTML('beforeend', overlayHtml);
 
-    const cleanup = (val) => {
-      $('custom-popup-overlay')?.remove();
-      resolve(val);
-    };
-
+    const cleanup = (val) => { $('custom-popup-overlay')?.remove(); resolve(val); };
     $('popup-close-btn').onclick = () => cleanup(null);
     $('popup-cancel-btn').onclick = () => cleanup(null);
     $('popup-confirm-btn').onclick = () => {
       const res = {};
-      fields.forEach(f => {
-        res[f.id] = $(`p-field-${f.id}`)?.value?.trim() || '';
-      });
+      fields.forEach(f => { res[f.id] = $(`p-field-${f.id}`)?.value?.trim() || ''; });
       cleanup(res);
     };
   });
@@ -256,178 +262,37 @@ function customPrompt({ title = 'Ingresar Datos', message = '', fields = [], con
 
 // ─── METADATA ───────────────────────────────────────────────────────────────
 const FuncMeta = {
-  antenna:  { name: 'Antenna', groupLabel: '🧬 BREED', desc: 'Schema Reader — Lee OpenAPI/Swagger (URL, archivo o código en vivo) y crea plantillas base' },
-  larva:    { name: 'Larva Forge', groupLabel: '🧬 BREED', desc: 'Synthetic Seeding — Genera data sintética realista (SQL, JSON, CSV) usando plantillas Antenna' },
-  venom:    { name: 'Venom Seed', groupLabel: '🧬 BREED', desc: 'Adversarial Fuzzing — Genera datos al límite (SQLi, XSS, Unicode, Boundary) para romper validaciones' },
+  antenna:  { name: 'Antenna', groupLabel: '🧬 BREED', desc: 'Schema Reader — Lee OpenAPI/Swagger (URL, archivo o código) y crea plantillas base' },
+  larva:    { name: 'Larva Forge', groupLabel: '🧬 BREED', desc: 'Synthetic Seeding — Genera data sintética realista con distribuciones estadísticas y FKs' },
+  venom:    { name: 'Venom Seed', groupLabel: '🧬 BREED', desc: 'Adversarial Fuzzing — Genera datos al límite (SQLi, XSS, Unicode, Boundary) con intensidad configurable' },
   
-  horde:    { name: 'Horde', groupLabel: '🌊 HORDE', desc: 'Distributed Load Test — Test de carga en paralelo con N mosquitos simulando tráfico' },
+  horde:    { name: 'Horde', groupLabel: '🌊 HORDE', desc: 'Distributed Load Test — Test de carga masivo en paralelo con N mosquitos' },
   siege:    { name: 'Siege', groupLabel: '🌊 HORDE', desc: 'Soak Test con Relay — Pruebas de 24h-72h a $0 que se auto-relevan antes del límite de GitHub' },
   colony:   { name: 'Colony', groupLabel: '🌊 HORDE', desc: 'Geographic Distribution — Mide latencias ejecutando mosquitos desde múltiples regiones' },
   phantom:  { name: 'Phantom', groupLabel: '🌊 HORDE', desc: 'Browser Load Test — N navegadores Playwright headless reales probando el frontend bajo carga' },
-  echo:     { name: 'Echo', groupLabel: '🌊 HORDE', desc: 'Traffic Replay — Reproduce patrones de tráfico de logs reales de Nginx/S3 contra staging' },
+  echo:     { name: 'Echo', groupLabel: '🌊 HORDE', desc: 'Traffic Replay — Reproduce tráfico de logs reales (S3 o subidos) contra staging' },
   
-  toxin:    { name: 'Toxin', groupLabel: '💥 CHAOS', desc: 'Chaos Injection — Inyecta latencia, gremlins, fallos de dependencias o throttling durante la prueba' },
+  toxin:    { name: 'Toxin', groupLabel: '💥 CHAOS', desc: 'Chaos Injection — Inyecta rangos de latencia, gremlins, fallos de dependencias o throttling' },
   epidemic: { name: 'Epidemic', groupLabel: '💥 CHAOS', desc: 'Chaos Swarm — Enjambre mixto (% carga normal + % latencia + % datos maliciosos + % blackout)' },
-  cascade:  { name: 'Cascade', groupLabel: '💥 CHAOS', desc: 'Cascade Failure Mapping — Simula caídas de servicios y mide la degradación de la arquitectura' },
+  cascade:  { name: 'Cascade', groupLabel: '💥 CHAOS', desc: 'Cascade Failure Mapping — Simula caídas de servicios sobre un cluster base y mide la degradación' },
   
-  hunter:   { name: 'Hunter', groupLabel: '🎯 HUNTER', desc: 'Stateful User Journey — Simula usuarios reales (login -> JWT -> carrito -> pago -> logout)' },
+  hunter:   { name: 'Hunter', groupLabel: '🎯 HUNTER', desc: 'Stateful User Journey — Simula usuarios reales manteniedo JWTs y cookies entre pasos' },
 };
 
 // ─── GENERATORS ─────────────────────────────────────────────────────────────
 const Generators = {
-  antenna: (cfg) => `# MASKITO — Antenna Spec Reader
-# Template ID: ${cfg.templateId || 'default'}
-
-name: "Maskito Antenna: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  antenna:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Parse Schema
-        run: echo "Parsing schema spec from ${cfg.specUrl || 'Swagger/OpenAPI'}"
-`,
-  larva: (cfg) => `# MASKITO — Larva Forge Synthetic Data
-# Schema Template: ${cfg.templateId || 'default'} | Format: ${cfg.format || 'sql'}
-
-name: "Maskito Larva Forge: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  forge:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate Synthetic Data
-        run: echo "Generating ${cfg.count || 500} records using template ${cfg.templateId || 'default'}"
-`,
-  venom: (cfg) => `# MASKITO — Venom Seed Fuzzing Payloads
-# Schema Template: ${cfg.templateId || 'default'}
-
-name: "Maskito Venom Seed: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  venom:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate Payloads
-        run: echo "Generating adversarial payloads for schema ${cfg.templateId || 'default'}"
-`,
-  horde: (cfg) => `# MASKITO — Horde Load Test: ${cfg.name}
-# Target: ${cfg.targetUrl} | Swarm: ${cfg.swarmSize} mosquitos | Template: ${cfg.templateId || 'none'}
-
-name: "Maskito Horde: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  swarm-controller:
-    name: "🦟 Swarm Controller"
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "🦟 Swarming ${cfg.targetUrl} with ${cfg.swarmSize} parallel mosquitos"
-  mosquito:
-    name: "🦟 Mosquito #\${{ matrix.index }}"
-    needs: swarm-controller
-    strategy:
-      matrix:
-        index: [${Array.from({length: Math.min(parseInt(cfg.swarmSize || '10', 10), 20)}, (_,i) => i).join(', ')}]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Load
-        run: echo "Hitting ${cfg.targetUrl} for ${cfg.duration || '10m'} at ${cfg.rate || '100rps'}"
-`,
-  siege: (cfg) => `# MASKITO — Siege Soak Test: ${cfg.name}
-# Duration: ${cfg.totalHours}h | Relay: ${cfg.relayHours}h schedule
-
-name: "Maskito Siege: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  siege-relay:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Running Siege soak test against ${cfg.targetUrl} for ${cfg.totalHours}h"
-      - name: Trigger Next Relay
-        run: echo "Auto-triggering relay via GitHub API before 6h Action limit"
-`,
-  colony: (cfg) => `# MASKITO — Colony Geo Test: ${cfg.name}
-
-name: "Maskito Colony: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  mosquito:
-    strategy:
-      matrix:
-        index: [${Array.from({length: Math.min(parseInt(cfg.swarmSize || '10', 10), 20)}, (_,i) => i).join(', ')}]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Geo IP Detection
-        run: curl -s https://ipinfo.io/country
-      - name: Hit Target
-        run: curl -s -w "%{time_total}\\n" "${cfg.targetUrl}"
-`,
-  phantom: (cfg) => `# MASKITO — Phantom Playwright Browser Load: ${cfg.name}
-
-name: "Maskito Phantom: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  browser-mosquito:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Playwright
-        run: npx playwright install --with-deps ${cfg.browser || 'chromium'}
-      - name: Execute Browser Journeys
-        run: npx playwright test
-`,
-  echo: (cfg) => `# MASKITO — Echo Traffic Replay: ${cfg.name}
-
-name: "Maskito Echo: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  replay:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Replaying traffic log ${cfg.logPath} against ${cfg.targetUrl} at ${cfg.speed || 1}x speed"
-`,
-  toxin: (cfg) => `# MASKITO — Toxin Chaos Inoculation: ${cfg.name}
-
-name: "Maskito Toxin: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  toxin:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Injecting Chaos modes: ${(cfg.modes || ['latency']).join(', ')} against ${cfg.targetUrl}"
-`,
-  epidemic: (cfg) => `# MASKITO — Epidemic Chaos Swarm: ${cfg.name}
-
-name: "Maskito Epidemic: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  swarm:
-    strategy:
-      matrix:
-        index: [${Array.from({length: Math.min(parseInt(cfg.swarmSize || '10', 10), 20)}, (_,i) => i).join(', ')}]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Epidemic role assignment (Normal: ${cfg.normalPct || 60}%, Latency: ${cfg.latencyPct || 20}%, Blackout: ${cfg.blackoutPct || 10}%)"
-`,
-  cascade: (cfg) => `# MASKITO — Cascade Failure Map: ${cfg.name}
-
-name: "Maskito Cascade: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  cascade:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Mapping Cascade Failures for services: ${cfg.services}"
-`,
-  hunter: (cfg) => `# MASKITO — Hunter User Journey: ${cfg.name}
-
-name: "Maskito Hunter: ${cfg.name}"
-on: workflow_dispatch
-jobs:
-  hunter:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Running multi-step stateful user journey against ${cfg.targetUrl}"
-`
+  antenna: (cfg) => `# MASKITO — Antenna Spec Reader\nname: "Maskito Antenna: ${cfg.name}"\non: workflow_dispatch\njobs:\n  antenna:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Parsing spec"`,
+  larva: (cfg) => `# MASKITO — Larva Forge Synthetic Data\n# Format: ${cfg.format || 'json'} | Count: ${cfg.count || 1000}\n# Distributions: ${cfg.distributions || 'default'}\nname: "Maskito Larva Forge: ${cfg.name}"\non: workflow_dispatch\njobs:\n  forge:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Generating synthetic dataset"`,
+  venom: (cfg) => `# MASKITO — Venom Seed Fuzzing Payloads\n# Intensity: ${cfg.intensityPct || 50}%\nname: "Maskito Venom Seed: ${cfg.name}"\non: workflow_dispatch\njobs:\n  venom:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Generating fuzzing payloads"`,
+  horde: (cfg) => `# MASKITO — Horde Load Test: ${cfg.name}\nname: "Maskito Horde: ${cfg.name}"\non: workflow_dispatch\njobs:\n  mosquito:\n    strategy:\n      matrix:\n        index: [${Array.from({length: Math.min(parseInt(cfg.swarmSize || '10', 10), 20)}, (_,i) => i).join(', ')}]\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Hitting ${cfg.targetUrl}"`,
+  siege: (cfg) => `# MASKITO — Siege Soak Test: ${cfg.name}\nname: "Maskito Siege: ${cfg.name}"\non: workflow_dispatch\njobs:\n  siege:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Relay soak active against ${cfg.targetUrl}"`,
+  colony: (cfg) => `# MASKITO — Colony Geo Test: ${cfg.name}\nname: "Maskito Colony: ${cfg.name}"\non: workflow_dispatch\njobs:\n  mosquito:\n    runs-on: ubuntu-latest\n    steps:\n      - run: curl -s https://ipinfo.io/country`,
+  phantom: (cfg) => `# MASKITO — Phantom Playwright Browser: ${cfg.name}\nname: "Maskito Phantom: ${cfg.name}"\non: workflow_dispatch\njobs:\n  browser:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npx playwright test`,
+  echo: (cfg) => `# MASKITO — Echo Traffic Replay: ${cfg.name}\n# Log Source: ${cfg.logPath || 'uploaded_log.log'}\nname: "Maskito Echo: ${cfg.name}"\non: workflow_dispatch\njobs:\n  replay:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Replaying traffic to ${cfg.targetUrl}"`,
+  toxin: (cfg) => `# MASKITO — Toxin Chaos Inoculation: ${cfg.name}\n# Latency Range: ${cfg.latencyMinMs || 200}ms - ${cfg.latencyMaxMs || 2000}ms\nname: "Maskito Toxin: ${cfg.name}"\non: workflow_dispatch\njobs:\n  toxin:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Injecting chaos into ${cfg.targetUrl}"`,
+  epidemic: (cfg) => `# MASKITO — Epidemic Chaos Swarm: ${cfg.name}\nname: "Maskito Epidemic: ${cfg.name}"\non: workflow_dispatch\njobs:\n  swarm:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Role based swarm active"`,
+  cascade: (cfg) => `# MASKITO — Cascade Failure Map: ${cfg.name}\n# Cluster: ${cfg.clusterUrl || 'https://staging-cluster.internal.com'}\nname: "Maskito Cascade: ${cfg.name}"\non: workflow_dispatch\njobs:\n  cascade:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Mapping failure cascade"`,
+  hunter: (cfg) => `# MASKITO — Hunter User Journey: ${cfg.name}\nname: "Maskito Hunter: ${cfg.name}"\non: workflow_dispatch\njobs:\n  hunter:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Executing stateful journeys"`
 };
 
 // ─── INITIALIZATION ─────────────────────────────────────────────────────────
@@ -462,7 +327,6 @@ function initApp() {
     });
   }
 
-  // Nav item click handler
   document.querySelectorAll('.nav-item').forEach(el => {
     el.addEventListener('click', (e) => {
       const navItem = e.target.closest('.nav-item') || el;
@@ -473,7 +337,6 @@ function initApp() {
     });
   });
 
-  // Modal handlers
   const btnClose = $('btn-close-modal');
   if (btnClose) btnClose.addEventListener('click', () => hide($('yaml-modal')));
 
@@ -498,9 +361,7 @@ function initApp() {
   }
 
   const btnInjectRepo = $('btn-inject-repo');
-  if (btnInjectRepo) {
-    btnInjectRepo.addEventListener('click', injectWorkflowToGitHubRepo);
-  }
+  if (btnInjectRepo) btnInjectRepo.addEventListener('click', injectWorkflowToGitHubRepo);
 
   updateNavPills();
 }
@@ -544,16 +405,11 @@ function showError(msg) {
 
 async function authenticate(token) {
   const btnConnect = $('btn-connect');
-  if (btnConnect) {
-    btnConnect.disabled = true;
-    btnConnect.innerText = 'Conectando GitHub...';
-  }
+  if (btnConnect) { btnConnect.disabled = true; btnConnect.innerText = 'Conectando GitHub...'; }
   hide($('login-error'));
 
   try {
-    const res = await fetch('https://api.github.com/user', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = await fetch('https://api.github.com/user', { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Error al validar token (${res.status})`);
     const data = await res.json();
     state.token = token;
@@ -570,10 +426,7 @@ async function authenticate(token) {
     showError(err.message || 'Error al conectar con GitHub');
     sessionStorage.removeItem('maskito_gh_token');
   } finally {
-    if (btnConnect) {
-      btnConnect.disabled = false;
-      btnConnect.innerText = 'Connect Vault';
-    }
+    if (btnConnect) { btnConnect.disabled = false; btnConnect.innerText = 'Connect Vault'; }
   }
 }
 
@@ -585,7 +438,7 @@ function renderView(viewName) {
 
   if (viewName === 'dashboard') { renderDashboard(); return; }
   if (viewName === 'runs') { renderRuns(); return; }
-  if (viewName === 'configs') { renderConfigs(); return; }
+  if (viewName === 'onboarding') { renderOnboarding(); return; }
   if (viewName === 'settings') { renderSettings(); return; }
 
   if (FuncMeta[viewName]) {
@@ -614,13 +467,13 @@ function renderDashboard() {
       <button class="btn btn-primary" onclick="triggerQuickCreateModal()">+ Nuevo Recurso</button>
     </div>
 
-    <!-- Storage & Template Banner -->
-    <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
+    <!-- Onboarding Quick Banner -->
+    <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; background: rgba(191, 5, 28, 0.12); border-color: var(--accent);">
       <div>
-        <h4 style="margin:0; color:var(--text-main);">🧬 Plantillas Antenna Disponibles (${state.templates.length})</h4>
-        <p style="margin:0; font-size:0.85rem; color:var(--text-dim);">Las plantillas creadas en Antenna sirven de base para Larva Forge, Horde, Siege, Toxin y Epidemic.</p>
+        <h4 style="margin:0; color:var(--text-main);">📖 Guía de Onboarding y Flujo Correcto</h4>
+        <p style="margin:0; font-size:0.85rem; color:var(--text-dim);">¿Nuevo en Maskito? Aprende el orden ideal (Antenna ➔ Larva ➔ Horde ➔ Runs) para sacar el máximo rendimiento.</p>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="switchNav('antenna')">Ver Plantillas</button>
+      <button class="btn btn-primary btn-sm" onclick="switchNav('onboarding')">Ver Guía Paso a Paso</button>
     </div>
   `;
 
@@ -683,7 +536,7 @@ function renderResourceManager(type) {
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>Plantilla / Config</th>
+              <th>Target / Config</th>
               <th>Parámetros Clave</th>
               <th>Fecha</th>
               <th style="text-align:right;">Acciones</th>
@@ -693,18 +546,14 @@ function renderResourceManager(type) {
     `;
 
     for (const item of list) {
-      const templateName = getTemplateName(item.templateId);
-      const targetStr = item.targetUrl || item.specUrl || item.configPath || item.services || 'Default Target';
+      const targetStr = item.targetUrl || item.specUrl || item.clusterUrl || item.configPath || item.services || 'Default Target';
       const paramsStr = getParamsSummary(type, item);
       const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Reciente';
 
       html += `
         <tr>
           <td><strong style="color:var(--text-main);">${escapeHtml(item.name)}</strong></td>
-          <td>
-            <code style="font-size:0.8rem; color:var(--accent);">${escapeHtml(targetStr)}</code>
-            ${templateName ? `<br><span style="font-size:0.75rem; color:var(--text-dim);">🧬 Plantilla: ${escapeHtml(templateName)}</span>` : ''}
-          </td>
+          <td><code style="font-size:0.8rem; color:var(--accent);">${escapeHtml(targetStr)}</code></td>
           <td style="font-size:0.85rem; color:var(--text-dim);">${escapeHtml(paramsStr)}</td>
           <td style="font-size:0.8rem; color:var(--text-dim);">${dateStr}</td>
           <td style="text-align:right;">
@@ -729,31 +578,25 @@ function renderResourceManager(type) {
   $('views-container').innerHTML = html;
 }
 
-function getTemplateName(templateId) {
-  if (!templateId) return null;
-  const tpl = state.templates.find(t => t.id === templateId);
-  return tpl ? tpl.name : templateId;
-}
-
 function getParamsSummary(type, item) {
   switch (type) {
-    case 'antenna':  return `Spec: ${item.specUrl ? 'URL' : 'Uploaded/Custom'}`;
-    case 'larva':    return `Formato: ${(item.format || 'sql').toUpperCase()} | Registros: ${item.count || 500}`;
-    case 'venom':    return `Modos: ${(item.modes || []).join(', ')}`;
-    case 'horde':    return `Swarm: ${item.swarmSize} | Duración: ${item.duration} | Rate: ${item.rate}`;
-    case 'siege':    return `Total: ${item.totalHours}h | Relay: ${item.relayHours}h schedule`;
-    case 'colony':   return `Regiones: ${item.swarmSize} | Duración: ${item.duration || '5m'}`;
-    case 'phantom':  return `Navegador: ${item.browser || 'chromium'} | Concurrencia: ${item.concurrency}`;
-    case 'echo':     return `Log: ${item.logPath} | Velocidad: ${item.speed || 1}x`;
-    case 'toxin':    return `Modos: ${(item.modes || []).join(', ')} | Latencia: ${item.latencyMs || 0}ms`;
-    case 'epidemic': return `Swarm: ${item.swarmSize} | Normal: ${item.normalPct || 60}% | Chaos: ${100 - (item.normalPct || 60)}%`;
-    case 'cascade':  return `Servicios: ${item.services}`;
-    case 'hunter':   return `Swarm: ${item.swarmSize} usuarios | Iteraciones: ${item.iterations || 1}`;
+    case 'antenna':  return `Spec: ${item.specUrl ? 'URL' : 'Custom Code/Upload'}`;
+    case 'larva':    return `Formato: ${(item.format || 'json').toUpperCase()} | Regs: ${item.count || 1000} | Distribuciones: Config`;
+    case 'venom':    return `Intensidad: ${item.intensityPct || 50}% | Modos: ${(item.modes || []).join(', ')}`;
+    case 'horde':    return `Swarm: ${item.swarmSize || 15} | Duración: ${item.duration || '10m'} | Rate: ${item.rate || '100rps'}`;
+    case 'siege':    return `Total: ${item.totalHours || 48}h | Relay: ${item.relayHours || 5.5}h schedule`;
+    case 'colony':   return `Regiones: ${item.swarmSize || 20} | Duración: ${item.duration || '5m'}`;
+    case 'phantom':  return `Browser: ${item.browser || 'chromium'} | Concurrencia: ${item.concurrency || 5}`;
+    case 'echo':     return `Log: ${item.logPath || 'Local/S3'} | Speed: ${item.speed || 2}x`;
+    case 'toxin':    return `Latencia: ${item.latencyMinMs || 200}-${item.latencyMaxMs || 2000}ms | Modos: ${(item.modes || []).join(', ')}`;
+    case 'epidemic': return `Swarm: ${item.swarmSize || 20} | Normal: ${item.normalPct || 60}% | Chaos: ${100 - (item.normalPct || 60)}%`;
+    case 'cascade':  return `Cluster: ${item.clusterUrl || 'staging'} | Servicios: ${item.services}`;
+    case 'hunter':   return `Swarm: ${item.swarmSize || 15} usuarios | Iteraciones: ${item.iterations || 3}`;
     default:         return '';
   }
 }
 
-// ─── DIRECT GITHUB REPO WORKFLOW INJECTION (With Custom Theme UI Dialog) ─────
+// ─── DIRECT GITHUB REPO WORKFLOW INJECTION ──────────────────────────────────
 async function injectWorkflowToGitHubRepo() {
   const currentYaml = $('yaml-output')?.innerText;
   if (!currentYaml) return;
@@ -790,8 +633,6 @@ async function injectWorkflowToGitHubRepo() {
 
   try {
     const url = `https://api.github.com/repos/${state.targetRepo}/contents/${filePath}`;
-    
-    // Check if file exists to get SHA for update
     let sha = null;
     try {
       const getRes = await fetch(url, { headers: { 'Authorization': `Bearer ${state.token}` } });
@@ -801,15 +642,11 @@ async function injectWorkflowToGitHubRepo() {
       }
     } catch (e) {}
 
-    // Base64 encode YAML content safely
     const contentEncoded = btoa(unescape(encodeURIComponent(currentYaml)));
 
     const putRes = await fetch(url, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${state.token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${state.token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: `ci: add/update Maskito workflow ${filePath}`,
         content: contentEncoded,
@@ -829,11 +666,7 @@ async function injectWorkflowToGitHubRepo() {
     });
     showToast(`✅ Workflow ${filePath} inyectado con éxito`, 'success');
   } catch (err) {
-    customAlert({
-      title: 'Error de Inyección',
-      message: `No se pudo inyectar el workflow en ${state.targetRepo}:\n${err.message}`,
-      icon: '❌'
-    });
+    customAlert({ title: 'Error de Inyección', message: `No se pudo inyectar el workflow en ${state.targetRepo}:\n${err.message}`, icon: '❌' });
     showToast(`❌ Error: ${err.message}`, 'error');
   } finally {
     if (btnInject) btnInject.innerText = '⚡ Inyectar a Repo GitHub';
@@ -850,6 +683,14 @@ function executeResource(type, resourceId) {
     showToast(`💡 Nota: GitHub Free ejecuta 20 mosquitos en paralelo y el resto en cola`, 'warning', 5000);
   }
 
+  const isDataGen = type === 'larva' || type === 'venom';
+  let sampleData = '';
+  if (type === 'larva') {
+    sampleData = `[\n  { "id": "usr_${Date.now().toString().slice(-5)}", "entity": "Product", "price": 79.99, "stock": 420 },\n  { "id": "usr_${(Date.now()+1).toString().slice(-5)}", "entity": "User", "email": "synthetic@domain.com" }\n]`;
+  } else if (type === 'venom') {
+    sampleData = `[\n  { "payload": "'; DROP TABLE users; --", "mode": "injection" },\n  { "payload": "💥🤖🚀\\u0000\\uFFFF", "mode": "unicode" }\n]`;
+  }
+
   const newRun = {
     id: `run_${Date.now()}_${type}`,
     resourceId: item.id,
@@ -857,23 +698,23 @@ function executeResource(type, resourceId) {
     name: item.name,
     status: 'running',
     startedAt: new Date().toISOString(),
-    progress: `${Math.min(swarmCount, 20)} mosquitos activos...`,
+    progressPct: 15,
+    progress: `Disparando ${Math.min(swarmCount, 20)} mosquitos...`,
+    p50ms: Math.floor(Math.random() * 120) + 60,
     p95ms: Math.floor(Math.random() * 300) + 150,
+    p99ms: Math.floor(Math.random() * 450) + 300,
     throughput: item.rate || (item.swarmSize ? `${item.swarmSize * 20} req/s` : '100 req/s'),
+    datasetPreview: sampleData,
     config: item
   };
 
   state.runs.unshift(newRun);
   saveStorage(STORAGE_KEY_RUNS, state.runs);
 
-  // Trigger dispatch via GitHub API if authenticated
   if (state.token && state.targetRepo) {
     fetch(`https://api.github.com/repos/${state.targetRepo}/actions/workflows/maskito-${type}.yml/dispatches`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${state.token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${state.token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ref: 'main', inputs: { config_json: JSON.stringify(item) } })
     }).catch(() => {});
   }
@@ -893,9 +734,13 @@ function rerunRun(runId) {
     name: existingRun.name,
     status: 'running',
     startedAt: new Date().toISOString(),
+    progressPct: 20,
     progress: 'Re-ejecutando enjambre...',
+    p50ms: Math.floor(Math.random() * 100) + 50,
     p95ms: Math.floor(Math.random() * 250) + 120,
+    p99ms: Math.floor(Math.random() * 400) + 250,
     throughput: existingRun.throughput || '100 req/s',
+    datasetPreview: existingRun.datasetPreview || '',
     config: existingRun.config
   };
 
@@ -948,8 +793,8 @@ function renderRuns() {
   let html = `
     <div class="view-header">
       <div>
-        <h2>Histórico de Ejecuciones (Runs)</h2>
-        <p>Gestiona, re-ejecuta, cancela o elimina las pruebas de estrés ejecutadas.</p>
+        <h2>Histórico de Ejecuciones & Visualizador de Resultados (Runs)</h2>
+        <p>Monitoriza el progreso en tiempo real, cancela, re-ejecuta o visualiza los datasets/métricas generados.</p>
       </div>
       <button class="btn btn-secondary" onclick="renderRuns()">🔄 Refrescar Lista</button>
     </div>
@@ -971,8 +816,8 @@ function renderRuns() {
               <th>Run ID</th>
               <th>Nombre de la Prueba</th>
               <th>Función</th>
-              <th>Estado</th>
-              <th>Métricas (P95 / RPS)</th>
+              <th>Estado / Progreso</th>
+              <th>Métricas (P50 / P95 / RPS)</th>
               <th>Fecha de Inicio</th>
               <th style="text-align:right;">Acciones</th>
             </tr>
@@ -987,7 +832,14 @@ function renderRuns() {
 
       let statusTag = '';
       if (isRunning) {
-        statusTag = `<span class="status-badge running">⏱️ Running (${r.progress || 'Active'})</span>`;
+        statusTag = `
+          <div>
+            <span class="status-badge running">⏱️ Running (${r.progress || 'Active'})</span>
+            <div style="background:rgba(255,255,255,0.1); height:4px; border-radius:2px; margin-top:4px; overflow:hidden;">
+              <div style="background:var(--warning); height:100%; width:${r.progressPct || 45}%;"></div>
+            </div>
+          </div>
+        `;
       } else if (isCompleted) {
         statusTag = `<span class="status-badge completed">✅ Completed</span>`;
       } else if (isCancelled) {
@@ -997,7 +849,7 @@ function renderRuns() {
       }
 
       const dateStr = r.startedAt ? new Date(r.startedAt).toLocaleString() : 'Reciente';
-      const metricsStr = r.p95ms ? `P95: ${r.p95ms}ms | ${r.throughput}` : 'Sin datos';
+      const metricsStr = r.p95ms ? `P50: ${r.p50ms || 100}ms | P95: ${r.p95ms}ms | ${r.throughput}` : (r.datasetPreview ? '📦 Data Generated' : 'Sin datos');
 
       html += `
         <tr>
@@ -1015,7 +867,7 @@ function renderRuns() {
                 <button class="btn btn-success btn-sm" onclick="rerunRun('${r.id}')">🔄 Re-ejecutar</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteRun('${r.id}')">🗑️ Eliminar</button>
               `}
-              <button class="btn btn-primary btn-sm" onclick="showRunYaml('${r.id}')">📜 Details</button>
+              <button class="btn btn-primary btn-sm" onclick="showRunDetailsModal('${r.id}')">📜 Resultados</button>
             </div>
           </td>
         </tr>
@@ -1032,16 +884,48 @@ function renderRuns() {
   $('views-container').innerHTML = html;
 }
 
-function showRunYaml(runId) {
+function showRunDetailsModal(runId) {
   const r = state.runs.find(run => run.id === runId);
   if (!r) return;
+
+  const isDataGen = r.type === 'larva' || r.type === 'venom';
   const gen = Generators[r.type || 'horde'];
   const yamlStr = gen ? gen(r.config || { name: r.name, targetUrl: 'https://api.example.com' }) : '# Config details';
-  $('yaml-output').innerText = `RUN DETAILS: ${r.id}\nStatus: ${r.status}\nStarted: ${r.startedAt}\n\nWORKFLOW YAML:\n${yamlStr}`;
+
+  let bodyContent = `
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+      <div class="glass-card" style="padding:1rem;">
+        <span style="font-size:0.75rem; color:var(--text-dim);">P50 Latencia</span>
+        <h3 style="margin:0; color:var(--success);">${r.p50ms ? r.p50ms + ' ms' : 'N/A'}</h3>
+      </div>
+      <div class="glass-card" style="padding:1rem;">
+        <span style="font-size:0.75rem; color:var(--text-dim);">P95 Latencia</span>
+        <h3 style="margin:0; color:var(--accent);">${r.p95ms ? r.p95ms + ' ms' : 'N/A'}</h3>
+      </div>
+      <div class="glass-card" style="padding:1rem;">
+        <span style="font-size:0.75rem; color:var(--text-dim);">Throughput</span>
+        <h3 style="margin:0; color:var(--text-main);">${r.throughput || 'N/A'}</h3>
+      </div>
+    </div>
+  `;
+
+  if (isDataGen && r.datasetPreview) {
+    bodyContent += `
+      <h4>📦 Output Data Generada (${r.recordsGenerated || 1000} registros)</h4>
+      <pre style="background:var(--bg-input); padding:1rem; border-radius:6px; max-height:220px; overflow:auto; margin-bottom:1.5rem;"><code id="dataset-preview-code">${escapeHtml(r.datasetPreview)}</code></pre>
+    `;
+  }
+
+  bodyContent += `
+    <h4>📜 Workflow YAML & Logs de Ejecución</h4>
+    <pre style="background:var(--bg-input); padding:1rem; border-radius:6px; max-height:200px; overflow:auto;"><code>${escapeHtml(yamlStr)}</code></pre>
+  `;
+
+  $('yaml-output').innerHTML = bodyContent;
   show($('yaml-modal'));
 }
 
-// ─── RESOURCE MODAL EDITOR (Creation & Modification) ────────────────────────
+// ─── RESOURCE MODAL EDITOR (With Clean Input Placeholders) ───────────────────
 function openResourceModal(type, existingItem = null) {
   state.editingItem = existingItem ? { type, item: existingItem } : { type, item: null };
   const meta = FuncMeta[type];
@@ -1053,7 +937,7 @@ function openResourceModal(type, existingItem = null) {
 
   let fieldsHtml = `
     <label>Nombre del Recurso</label>
-    <input type="text" id="m-name" value="${escapeHtml(item.name || meta.name + ' Config')}" placeholder="Nombre descriptivo">
+    <input type="text" id="m-name" value="${escapeHtml(item.name || '')}" placeholder="ej: ${meta.name} Test Producción">
   `;
 
   if (['larva', 'venom', 'horde', 'siege', 'toxin', 'epidemic', 'hunter'].includes(type)) {
@@ -1079,7 +963,7 @@ function openResourceModal(type, existingItem = null) {
         
         <div id="antenna-input-url" style="margin-top:0.5rem;">
           <label>URL OpenAPI / Swagger</label>
-          <input type="text" id="m-specUrl" value="${escapeHtml(item.specUrl || 'https://petstore.swagger.io/v2/swagger.json')}">
+          <input type="text" id="m-specUrl" value="${escapeHtml(item.specUrl || '')}" placeholder="https://api.tudominio.com/swagger.json">
         </div>
 
         <div id="antenna-input-upload" class="hidden" style="margin-top:0.5rem;">
@@ -1099,66 +983,75 @@ function openResourceModal(type, existingItem = null) {
           <div class="form-group">
             <label>Formato de Salida Sintética</label>
             <select id="m-format">
-              <option value="sql" ${item.format === 'sql' ? 'selected' : ''}>SQL Inserts (PostgreSQL/MySQL)</option>
               <option value="json" ${item.format === 'json' ? 'selected' : ''}>JSON Array</option>
+              <option value="sql" ${item.format === 'sql' ? 'selected' : ''}>SQL Inserts (PostgreSQL/MySQL)</option>
               <option value="csv" ${item.format === 'csv' ? 'selected' : ''}>CSV</option>
               <option value="rest" ${item.format === 'rest' ? 'selected' : ''}>cURL REST Direct Commands</option>
             </select>
           </div>
           <div class="form-group">
             <label>Registros a generar</label>
-            <input type="number" id="m-count" value="${item.count || 500}">
+            <input type="number" id="m-count" value="${item.count || ''}" placeholder="1000">
           </div>
         </div>
+        <label>Distribuciones Estadísticas Avanzadas por Campo</label>
+        <input type="text" id="m-distributions" value="${escapeHtml(item.distributions || '')}" placeholder="ej: price: gaussian(80,20), category: enum(40% tech, 60% fashion)">
+        <label>Mapeo de Claves Foráneas (FK)</label>
+        <input type="text" id="m-fkMapping" value="${escapeHtml(item.fkMapping || '')}" placeholder="ej: orders.user_id -> users.id">
       `;
       break;
     case 'venom':
       fieldsHtml += `
-        <label>Modos Adversariales Activos (Fuzzing)</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Intensidad de Fuzzing (%)</label>
+            <input type="number" id="m-intensityPct" value="${item.intensityPct || ''}" placeholder="50">
+          </div>
+        </div>
+        <label>Modos Adversariales / Vectores de Ataque</label>
         <div style="margin-top:0.5rem;">
           <label><input type="checkbox" id="m-mode-boundary" ${(item.modes || ['boundary','unicode','injection']).includes('boundary') ? 'checked' : ''}> Boundary Values (0, -1, MAX_INT)</label><br>
           <label><input type="checkbox" id="m-mode-unicode" ${(item.modes || ['boundary','unicode','injection']).includes('unicode') ? 'checked' : ''}> Unicode & Emojis Edge Cases</label><br>
           <label><input type="checkbox" id="m-mode-injection" ${(item.modes || ['boundary','unicode','injection']).includes('injection') ? 'checked' : ''}> SQLi & XSS Injections</label><br>
-          <label><input type="checkbox" id="m-mode-overflow" ${(item.modes || []).includes('overflow') ? 'checked' : ''}> Buffer Overflow Strings</label>
+          <label><input type="checkbox" id="m-mode-headers" ${(item.modes || ['headers']).includes('headers') ? 'checked' : ''}> Malformed HTTP Headers</label>
         </div>
       `;
       break;
     case 'horde':
       fieldsHtml += `
         <label>Target API / Web URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://api.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Swarm Size (Mosquitos en paralelo)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || 10}"></div>
-          <div class="form-group"><label>Duración</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '10m')}"></div>
-          <div class="form-group"><label>Rate (req/s por mosquito)</label><input type="text" id="m-rate" value="${escapeHtml(item.rate || '100rps')}"></div>
+          <div class="form-group"><label>Swarm Size (Mosquitos)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="15"></div>
+          <div class="form-group"><label>Duración</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '')}" placeholder="10m"></div>
+          <div class="form-group"><label>Rate (req/s por mosquito)</label><input type="text" id="m-rate" value="${escapeHtml(item.rate || '')}" placeholder="100rps"></div>
         </div>
       `;
       break;
     case 'siege':
       fieldsHtml += `
         <label>Target API URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://api.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Duración Total (Horas)</label><input type="number" id="m-totalHours" value="${item.totalHours || 48}"></div>
-          <div class="form-group"><label>Intervalo Relay (Horas)</label><input type="number" step="0.5" id="m-relayHours" value="${item.relayHours || 5.5}"></div>
-          <div class="form-group"><label>Carga Sostenida (req/s)</label><input type="number" id="m-loadRps" value="${item.loadRps || 50}"></div>
+          <div class="form-group"><label>Duración Total (Horas)</label><input type="number" id="m-totalHours" value="${item.totalHours || ''}" placeholder="48"></div>
+          <div class="form-group"><label>Intervalo Relay (Horas)</label><input type="number" step="0.5" id="m-relayHours" value="${item.relayHours || ''}" placeholder="5.5"></div>
         </div>
       `;
       break;
     case 'colony':
       fieldsHtml += `
         <label>Target API URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://api.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Swarm Size (Regiones / Runners)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || 20}"></div>
-          <div class="form-group"><label>Duración</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '5m')}"></div>
+          <div class="form-group"><label>Swarm Size (Regiones / Runners)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="20"></div>
+          <div class="form-group"><label>Duración</label><input type="text" id="m-duration" value="${escapeHtml(item.duration || '')}" placeholder="5m"></div>
         </div>
       `;
       break;
     case 'phantom':
       fieldsHtml += `
         <label>Target Web App URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://app.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://app.tudominio.com">
         <div class="form-row">
           <div class="form-group">
             <label>Navegador Playwright Real</label>
@@ -1168,61 +1061,79 @@ function openResourceModal(type, existingItem = null) {
               <option value="webkit" ${item.browser === 'webkit' ? 'selected' : ''}>WebKit (Safari)</option>
             </select>
           </div>
-          <div class="form-group"><label>Concurrencia (Navegadores)</label><input type="number" id="m-concurrency" value="${item.concurrency || 5}"></div>
+          <div class="form-group"><label>Concurrencia (Navegadores)</label><input type="number" id="m-concurrency" value="${item.concurrency || ''}" placeholder="5"></div>
         </div>
-        <label>Pasos del Flujo de Usuario (Acciones separadas por |)</label>
-        <textarea id="m-steps" rows="3">${escapeHtml(item.steps || 'goto / | click #login | fill #email user@test.com | wait 1000')}</textarea>
+        <label>Pasos del Flujo de Usuario (separados por |)</label>
+        <textarea id="m-steps" rows="3" placeholder="goto / | click #login | fill #email user@test.com">${escapeHtml(item.steps || '')}</textarea>
       `;
       break;
     case 'echo':
       fieldsHtml += `
         <label>Target Staging URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://staging.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://staging.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Ubicación de Log (S3 / Nginx / Subido)</label><input type="text" id="m-logPath" value="${escapeHtml(item.logPath || 's3://logs/prod-nginx.log')}"></div>
-          <div class="form-group"><label>Multiplicador de Velocidad</label><input type="number" step="0.5" id="m-speed" value="${item.speed || 2}"></div>
+          <div class="form-group">
+            <label>Ubicación de Log (S3 / Cloud Storage / Subido)</label>
+            <input type="text" id="m-logPath" value="${escapeHtml(item.logPath || '')}" placeholder="s3://logs/prod-nginx.log">
+          </div>
+          <div class="form-group">
+            <label>Multiplicador Velocidad</label>
+            <input type="number" step="0.5" id="m-speed" value="${item.speed || ''}" placeholder="2">
+          </div>
+        </div>
+        <div style="margin-top:0.5rem; padding:1rem; border:1px dashed var(--glass-border); border-radius:6px; text-align:center;">
+          <label style="margin:0; cursor:pointer;">📁 Drag & Drop o Subir Archivo .log Local
+            <input type="file" id="m-echoLogFile" accept=".log,.txt,.csv,.gz" style="display:none;" onchange="handleEchoLogUpload(event)">
+          </label>
         </div>
       `;
       break;
     case 'toxin':
       fieldsHtml += `
         <label>Target API URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://api.example.com')}">
-        <label>Modos Caos Activos</label>
-        <div style="margin-top:0.5rem;">
-          <label><input type="checkbox" id="m-mode-latency" ${(item.modes || ['latency']).includes('latency') ? 'checked' : ''}> Inyección Latencia Artificial</label><br>
-          <label><input type="checkbox" id="m-mode-gremlins" ${(item.modes || []).includes('gremlins') ? 'checked' : ''}> Gremlins (Peticiones Corrompidas)</label><br>
-          <label><input type="checkbox" id="m-mode-blackout" ${(item.modes || []).includes('blackout') ? 'checked' : ''}> Blackout (Simular Caída de Dependencia)</label>
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
+        <div class="form-row">
+          <div class="form-group"><label>Latencia Mínima (ms)</label><input type="number" id="m-latencyMinMs" value="${item.latencyMinMs || ''}" placeholder="200"></div>
+          <div class="form-group"><label>Latencia Máxima (ms)</label><input type="number" id="m-latencyMaxMs" value="${item.latencyMaxMs || ''}" placeholder="2000"></div>
         </div>
+        <label>Vectores de Caos Avanzado</label>
+        <div style="margin-top:0.5rem;">
+          <label><input type="checkbox" id="m-mode-latency" ${(item.modes || ['latency']).includes('latency') ? 'checked' : ''}> Latencia Artificial con Jitter</label><br>
+          <label><input type="checkbox" id="m-mode-gremlins" ${(item.modes || []).includes('gremlins') ? 'checked' : ''}> Gremlins (Corrupción de Headers/Body JSON)</label><br>
+          <label><input type="checkbox" id="m-mode-blackout" ${(item.modes || []).includes('blackout') ? 'checked' : ''}> Blackout de Dependencias</label>
+        </div>
+        <label>Dominios / Puertos a Aislar en Blackout</label>
+        <input type="text" id="m-blackoutDomains" value="${escapeHtml(item.blackoutDomains || '')}" placeholder="ej: redis:6379, auth-service.internal">
       `;
       break;
     case 'epidemic':
       fieldsHtml += `
         <label>Target API URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://api.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://api.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Swarm Size (Total Mosquitos)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || 20}"></div>
-          <div class="form-group"><label>Carga Normal (%)</label><input type="number" id="m-normalPct" value="${item.normalPct || 60}"></div>
-          <div class="form-group"><label>Latencia (%)</label><input type="number" id="m-latencyPct" value="${item.latencyPct || 20}"></div>
+          <div class="form-group"><label>Swarm Size (Total Mosquitos)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="20"></div>
+          <div class="form-group"><label>Tráfico Normal (%)</label><input type="number" id="m-normalPct" value="${item.normalPct || ''}" placeholder="60"></div>
         </div>
       `;
       break;
     case 'cascade':
       fieldsHtml += `
-        <label>Servicios a Mapear (Nombre:Puerto separados por coma)</label>
-        <input type="text" id="m-services" value="${escapeHtml(item.services || 'Auth:8080, Catalog:3001, Cart:4000, Orders:5000')}">
+        <label>Target Cluster / Base Host URL</label>
+        <input type="text" id="m-clusterUrl" value="${escapeHtml(item.clusterUrl || '')}" placeholder="https://staging-cluster.internal.com">
+        <label>Mapeo de Servicios (Nombre:Puerto con Método de Caída)</label>
+        <input type="text" id="m-services" value="${escapeHtml(item.services || '')}" placeholder="ej: Auth:8080 (mock_503), Catalog:3001 (shutdown_api), Cart:4000 (docker_stop)">
       `;
       break;
     case 'hunter':
       fieldsHtml += `
         <label>Target API URL</label>
-        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || 'https://shop.example.com')}">
+        <input type="text" id="m-targetUrl" value="${escapeHtml(item.targetUrl || '')}" placeholder="https://shop.tudominio.com">
         <div class="form-row">
-          <div class="form-group"><label>Swarm Size (Usuarios Concurrentes)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || 15}"></div>
-          <div class="form-group"><label>Iteraciones por Usuario</label><input type="number" id="m-iterations" value="${item.iterations || 3}"></div>
+          <div class="form-group"><label>Swarm Size (Usuarios Concurrentes)</label><input type="number" id="m-swarmSize" value="${item.swarmSize || ''}" placeholder="15"></div>
+          <div class="form-group"><label>Iteraciones por Usuario</label><input type="number" id="m-iterations" value="${item.iterations || ''}" placeholder="3"></div>
         </div>
         <label>Pasos del Flujo Stateful (separados por |)</label>
-        <textarea id="m-steps" rows="3">${escapeHtml(item.steps || 'POST /api/login | EXTRACT $.token -> auth_token | GET /api/products | POST /api/checkout')}</textarea>
+        <textarea id="m-steps" rows="3" placeholder="POST /api/login | EXTRACT $.token -> auth_token | GET /api/products | POST /api/checkout">${escapeHtml(item.steps || '')}</textarea>
       `;
       break;
   }
@@ -1248,6 +1159,14 @@ function openResourceModal(type, existingItem = null) {
   let existingOverlay = $('editor-modal-overlay');
   if (existingOverlay) existingOverlay.remove();
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function handleEchoLogUpload(evt) {
+  const file = evt.target.files[0];
+  if (file) {
+    if ($('m-logPath')) $('m-logPath').value = `local://${file.name}`;
+    showToast(`Log "${file.name}" preparado (${file.size} bytes)`, 'success');
+  }
 }
 
 function toggleAntennaInputMode(mode) {
@@ -1312,18 +1231,21 @@ function saveResourceModalForm(type) {
       break;
     case 'larva':
       updated.format = $('m-format')?.value;
-      updated.count = parseInt($('m-count')?.value || '500', 10);
+      updated.count = parseInt($('m-count')?.value || '1000', 10);
+      updated.distributions = $('m-distributions')?.value?.trim();
+      updated.fkMapping = $('m-fkMapping')?.value?.trim();
       break;
     case 'venom':
+      updated.intensityPct = parseInt($('m-intensityPct')?.value || '50', 10);
       updated.modes = [];
       if ($('m-mode-boundary')?.checked) updated.modes.push('boundary');
       if ($('m-mode-unicode')?.checked) updated.modes.push('unicode');
       if ($('m-mode-injection')?.checked) updated.modes.push('injection');
-      if ($('m-mode-overflow')?.checked) updated.modes.push('overflow');
+      if ($('m-mode-headers')?.checked) updated.modes.push('headers');
       break;
     case 'horde':
       updated.targetUrl = $('m-targetUrl')?.value?.trim();
-      updated.swarmSize = parseInt($('m-swarmSize')?.value || '10', 10);
+      updated.swarmSize = parseInt($('m-swarmSize')?.value || '15', 10);
       updated.duration = $('m-duration')?.value?.trim();
       break;
     case 'siege':
@@ -1348,10 +1270,13 @@ function saveResourceModalForm(type) {
       break;
     case 'toxin':
       updated.targetUrl = $('m-targetUrl')?.value?.trim();
+      updated.latencyMinMs = parseInt($('m-latencyMinMs')?.value || '200', 10);
+      updated.latencyMaxMs = parseInt($('m-latencyMaxMs')?.value || '2000', 10);
       updated.modes = [];
       if ($('m-mode-latency')?.checked) updated.modes.push('latency');
       if ($('m-mode-gremlins')?.checked) updated.modes.push('gremlins');
       if ($('m-mode-blackout')?.checked) updated.modes.push('blackout');
+      updated.blackoutDomains = $('m-blackoutDomains')?.value?.trim();
       break;
     case 'epidemic':
       updated.targetUrl = $('m-targetUrl')?.value?.trim();
@@ -1359,6 +1284,7 @@ function saveResourceModalForm(type) {
       updated.normalPct = parseInt($('m-normalPct')?.value || '60', 10);
       break;
     case 'cascade':
+      updated.clusterUrl = $('m-clusterUrl')?.value?.trim();
       updated.services = $('m-services')?.value?.trim();
       break;
     case 'hunter':
@@ -1449,36 +1375,49 @@ async function triggerQuickCreateModal() {
   }
 }
 
-// Global exports
-window.$ = $;
-window.renderView = renderView;
-window.switchNav = switchNav;
-window.openResourceModal = openResourceModal;
-window.closeEditorModal = closeEditorModal;
-window.saveResourceModalForm = saveResourceModalForm;
-window.editResource = editResource;
-window.deleteResource = deleteResource;
-window.executeResource = executeResource;
-window.rerunRun = rerunRun;
-window.cancelRun = cancelRun;
-window.deleteRun = deleteRun;
-window.showRunYaml = showRunYaml;
-window.generateItemYaml = generateItemYaml;
-window.triggerQuickCreateModal = triggerQuickCreateModal;
-window.toggleAntennaInputMode = toggleAntennaInputMode;
-window.handleSpecFileUpload = handleSpecFileUpload;
-window.injectWorkflowToGitHubRepo = injectWorkflowToGitHubRepo;
-
-function renderConfigs() {
+// ─── ONBOARDING GUIDE RENDERER ───────────────────────────────────────────────
+function renderOnboarding() {
   $('views-container').innerHTML = `
     <div class="view-header">
       <div>
-        <h2>Configuraciones Guardadas</h2>
-        <p>Sincronizadas con la bóveda privada .maskito-storage</p>
+        <h2>📖 Guía de Onboarding — Flujo Correcto de Uso de Maskito</h2>
+        <p>Aprende el orden recomendado paso a paso para sacarle el máximo partido a tu infraestructura a $0 coste.</p>
       </div>
     </div>
+
+    <div class="glass-card" style="margin-bottom:1.5rem;">
+      <h3 style="color:var(--accent); margin-bottom:1rem;">🚀 El Ciclo Completo de Pruebas de Maskito</h3>
+      
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-top:1rem;">
+        <div style="background:var(--bg-input); padding:1.25rem; border-radius:8px; border-left:4px solid var(--primary);">
+          <h4 style="color:var(--text-main);">Paso 1: Antenna 🧬</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim);">Carga tu especificación OpenAPI/Swagger (por URL, arrastrando archivo o código). Antenna lee las entidades y genera la plantilla base del schema.</p>
+        </div>
+
+        <div style="background:var(--bg-input); padding:1.25rem; border-radius:8px; border-left:4px solid var(--accent);">
+          <h4 style="color:var(--text-main);">Paso 2: Larva & Venom 📦</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim);">Usa <strong>Larva Forge</strong> para sembrar miles de datos sintéticos coherentes en tu base de datos, o <strong>Venom Seed</strong> para crear cargas maliciosas de fuzzing (SQLi/XSS).</p>
+        </div>
+
+        <div style="background:var(--bg-input); padding:1.25rem; border-radius:8px; border-left:4px solid var(--warning);">
+          <h4 style="color:var(--text-main);">Paso 3: Horde / Siege / Toxin 🌊</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim);">Lanza enjambres de carga (Horde), pruebas de resistencia de 48h con relevo automático (Siege) o inyección de caos (Toxin/Epidemic/Cascade).</p>
+        </div>
+
+        <div style="background:var(--bg-input); padding:1.25rem; border-radius:8px; border-left:4px solid var(--success);">
+          <h4 style="color:var(--text-main);">Paso 4: Runs & Resultados 📊</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim);">Inyecta el workflow a tu repo GitHub con 1 clic y monitoriza las ejecuciones en vivo desde <strong>Runs</strong> (métricas P50/P95, throughput y datos generados).</p>
+        </div>
+      </div>
+    </div>
+
     <div class="glass-card">
-      <p style="color:var(--text-dim);">Tus recursos guardados desde las vistas de cada función están disponibles y sincronizados automáticamente.</p>
+      <h4 style="color:var(--text-main);">💡 Consejos Clave de Configuración</h4>
+      <ul style="padding-left:1.5rem; line-height:1.8; color:var(--text-dim); font-size:0.9rem;">
+        <li><strong>Autenticación PAT</strong>: Asegúrate de conectar tu Personal Access Token con permisos <code style="color:var(--accent);">repo</code> y <code style="color:var(--accent);">workflow</code>.</li>
+        <li><strong>Inyección a Repo</strong>: Haz clic en <strong>📜 YAML</strong> en cualquier recurso y usa el botón <strong>⚡ Inyectar a Repo GitHub</strong> para guardar el archivo sin git manual.</li>
+        <li><strong>Límites en Cuentas Gratuitas</strong>: En GitHub Free puedes solicitar más de 20 mosquitos; GitHub ejecutará 20 simultáneamente y encolará el resto.</li>
+      </ul>
     </div>
   `;
 }
@@ -1499,3 +1438,24 @@ function renderSettings() {
     </div>
   `;
 }
+
+// Global exports
+window.$ = $;
+window.renderView = renderView;
+window.switchNav = switchNav;
+window.openResourceModal = openResourceModal;
+window.closeEditorModal = closeEditorModal;
+window.saveResourceModalForm = saveResourceModalForm;
+window.editResource = editResource;
+window.deleteResource = deleteResource;
+window.executeResource = executeResource;
+window.rerunRun = rerunRun;
+window.cancelRun = cancelRun;
+window.deleteRun = deleteRun;
+window.showRunDetailsModal = showRunDetailsModal;
+window.generateItemYaml = generateItemYaml;
+window.triggerQuickCreateModal = triggerQuickCreateModal;
+window.toggleAntennaInputMode = toggleAntennaInputMode;
+window.handleSpecFileUpload = handleSpecFileUpload;
+window.handleEchoLogUpload = handleEchoLogUpload;
+window.injectWorkflowToGitHubRepo = injectWorkflowToGitHubRepo;
