@@ -1,276 +1,131 @@
 <div align="center">
-  <img src="assets/logo_maskito.png" alt="Maskito Logo" width="180" />
+  <img src="assets/logo_maskito.png" alt="Maskito Logo" width="200" />
   <h1>MASKITO</h1>
   <p><strong>The Swarm Strikes. Zero Cost. Maximum Pressure.</strong></p>
   <p>
-    <img src="https://img.shields.io/npm/v/terra-maskito?color=%23bf051c&label=npm&logo=npm" alt="npm">
-    <img src="https://img.shields.io/badge/license-MIT-bf051c" alt="MIT License">
-    <img src="https://img.shields.io/badge/Terra-Ecosystem-bf051c" alt="Terra">
-    <img src="https://img.shields.io/badge/cost-%240-green" alt="$0 Cost">
-    <img src="https://img.shields.io/badge/GitHub%20Actions-Native-24292e?logo=github" alt="GitHub Actions">
+    <a href="https://amglogicalis.github.io/maskito-repo-public/"><img src="https://img.shields.io/badge/🌐_Web_Console-Live_Online-bf051c?style=for-the-badge" alt="Live Console"></a>
+    <img src="https://img.shields.io/npm/v/terra-maskito?color=%23bf051c&label=npm&logo=npm&style=for-the-badge" alt="npm">
+    <img src="https://img.shields.io/badge/license-MIT-bf051c?style=for-the-badge" alt="MIT License">
+    <img src="https://img.shields.io/badge/cost-%240-green?style=for-the-badge" alt="$0 Cost">
+    <img src="https://img.shields.io/badge/GitHub%20Actions-Native-24292e?logo=github&style=for-the-badge" alt="GitHub Actions">
   </p>
-  <p><em>Massive stress testing &amp; synthetic data seeding. 100% GitHub-native. $0.</em></p>
+  <p><em>Massive stress testing &amp; synthetic data seeding engine running entirely on GitHub Actions at $0 cost.</em></p>
 </div>
 
 ---
 
-## What is Maskito?
+## 🌐 Consola Web Online & Live Preview
 
-Maskito is a **$0 cost, GitHub-native** stress testing and synthetic data seeding engine. No cloud infrastructure needed. No monthly subscriptions. Just GitHub Actions, a PAT, and a private `.maskito-storage` repository.
+Maskito incluye una **Consola Web moderna en Dark Mode con arquitectura Glassmorphism** (color primario `#bf051c`) que te permite crear, personalizar e inyectar workflows directamente a cualquier repositorio GitHub con 1 solo clic.
 
-A mosquito is annoying. A **swarm of mosquitoes** is devastating. That's exactly what Maskito does to your infrastructure — in a controlled, measurable, and completely free way.
+👉 **[Abrir Consola Web Online desplegada en GitHub Pages](https://amglogicalis.github.io/maskito-repo-public/)**
 
----
-
-## 🧬 BREED — Synthetic Data Seeding
-
-| Test | Description |
-|:-----|:-----------|
-| 🦟 **Antenna** | Reads your OpenAPI/Swagger spec and generates a `maskito-seed.yaml` config automatically |
-| 🦟 **Larva Forge** | Generates statistically coherent datasets with real distributions (Gaussian, Poisson, temporal) and relational consistency |
-| 🦟 **Venom Seed** | Generates adversarial payloads — schema-guided fuzzing at boundary values, unicode edge cases, and injection patterns |
-
-## 🌊 HORDE — Load Testing
-
-| Test | Description |
-|:-----|:-----------|
-| 🦟 **Horde** | Distributed load test across N parallel GitHub Actions — more mosquitos, more pressure |
-| 🦟 **Siege** | Endurance/soak test lasting **days** via the Relay mechanism — each Action self-triggers the next before expiring |
-| 🦟 **Colony** | Simultaneous test from multiple GitHub runner locations — auto-detects and reports actual region per mosquito |
-| 🦟 **Phantom** | Playwright headless browser load test — finds frontend bugs that HTTP tests miss |
-| 🦟 **Echo** | Replay production traffic patterns against staging — the most realistic test possible |
-
-## 💥 CHAOS — Chaos Engineering
-
-| Test | Description |
-|:-----|:-----------|
-| 🦟 **Toxin** | Inject latency, malformed requests (Gremlins), dependency blackouts, or bandwidth throttling |
-| 🦟 **Epidemic** | The most realistic attack profile: configurable % of swarm doing normal load, latency injection, adversarial data, and blackouts — simultaneously |
-| 🦟 **Cascade** | Automatically maps failure propagation across your microservices — what SRE teams spend weeks building manually |
-
-## 🎯 HUNTER — Advanced Scenarios
-
-| Test | Description |
-|:-----|:-----------|
-| 🦟 **Hunter** | Stateful user journey testing — each mosquito simulates a complete real user (login → browse → cart → checkout → logout) with session state maintained across all steps |
+<div align="center">
+  <img src="assets/console_preview_maskito.PNG" alt="Maskito Web Console Preview" width="100%" style="border-radius:10px; border:1px solid rgba(191,5,28,0.3);" />
+</div>
 
 ---
 
-## ✨ Swarm Engine
+## 💡 ¿Qué es Maskito?
 
-Every test suite is powered by the **Swarm Engine** — a configurable number of GitHub Actions running in parallel. More mosquitos = more load, more geographic diversity, harder to rate-limit.
+Maskito es un motor nativo para **GitHub Actions a $0 coste** diseñado para ejecutar pruebas de esfuerzo masivas, siembra de datos sintéticos e ingeniería de caos sin pagar infraestructura ni servidores externos.
 
-```yaml
-swarm:
-  size: 20    # 20 parallel Actions attacking simultaneously
+Un mosquito es una molestia. Un **enjambre de mosquitos** paraliza un sistema. Maskito distribuye la carga entre $N$ mosquitos (runners paralelos de GitHub Actions) de forma totalmente controlada y reproducible.
+
+---
+
+## 🚀 Flujo Recomendado de Uso (Step-by-Step Workflow)
+
+Para obtener los mejores resultados en tu arquitectura, se recomienda seguir el siguiente orden:
+
+```mermaid
+flowchart LR
+    A[🧬 Paso 1: Antenna] --> B[📦 Paso 2: Larva / Venom]
+    B --> C[🌊 Paso 3: Horde / Siege / Toxin]
+    C --> D[📊 Paso 4: Runs & Métricas]
 ```
 
-## ⏱️ Relay Engine (Siege)
-
-Soak tests that last **hours or days** — free. Each Action saves state and self-triggers the next relay before the 6-hour GitHub limit. Zero external dependencies.
-
-```yaml
-siege:
-  duration_hours: 48    # 48h total soak
-  relay_hours: 5.5      # auto-calculated relay schedule
-  load_rps: 50
-```
+1. **Paso 1 — Antenna (Schema Reader)**: Carga tu especificación OpenAPI/Swagger por URL, subiendo un archivo o pegando código. Antenna detecta tus entidades y genera la plantilla base.
+2. **Paso 2 — Larva Forge & Venom Seed (Data Seeding & Fuzzing)**: Usa Larva Forge para sembrar miles de registros sintéticos en tu base de datos o Venom Seed para generar cargas de fuzzing maliciosas (SQLi/XSS).
+3. **Paso 3 — Horde / Siege / Toxin (Ataque de Enjambre & Caos)**: Configura pruebas de carga simultáneas (Horde), pruebas de resistencia de 48h con auto-relevo (Siege) o inyección de caos (Toxin/Epidemic/Cascade).
+4. **Paso 4 — Inyección & Runs (Monitorización Live)**: Inyecta el archivo `.github/workflows/maskito-*.yml` a tu repo con 1 clic y monitoriza métricas (P50/P95, Throughput, Logs) en tiempo real desde **Runs**.
 
 ---
 
-## Quick Start
+## 🛠️ Catálogo Completo de las 12 Funciones
 
-### Install
+### 🧬 BREED Suite — Generación de Datos & Fuzzing
+* **🧬 Antenna (Schema Reader)**: Analiza especificaciones OpenAPI/Swagger y genera plantillas `.yaml` estándar de tus modelos de datos.
+* **📦 Larva Forge (Synthetic Data)**: Genera datasets sintéticos realistas con distribuciones estadísticas (Gaussiana, Poisson, Enum) y reglas de claves foráneas (FK).
+* **💉 Venom Seed (Adversarial Fuzzing)**: Genera payloads de prueba al límite (SQL Injection, XSS, Unicode/Emojis, Boundary Values y cabeceras malformadas).
+
+### 🌊 HORDE Suite — Pruebas de Carga & Rendimiento
+* **🌊 Horde (Distributed Load Test)**: Test de carga masivo en paralelo con $N$ mosquitos atacando endpoints simultáneamente.
+* **⏱️ Siege (Soak Test con Relay)**: Pruebas de resistencia sostenidas de 24h a 72h a $0 coste que se auto-relevan vía GitHub API antes del límite de 6h por Action.
+* **🌍 Colony (Geographic Distribution)**: Ejecuta mosquitos en múltiples regiones de runners comprobando latencias geográficas reales.
+* **👻 Phantom (Browser Load Test)**: Levanta navegadores Playwright (Chromium/Firefox) reales bajo carga para detectar fallos JS y degradado visual DOM.
+* **📋 Echo (Traffic Replay)**: Sube o enlaza archivos de logs reales (Nginx/S3) para reproducir patrones de tráfico de producción contra entornos de staging.
+
+### 💥 CHAOS Suite — Ingeniería de Caos
+* **☠️ Toxin (Chaos Injection)**: Inyecta rangos de latencia configurable en ms, peticiones corrompidas (Gremlins) o caídas de dependencias (Blackout).
+* **☣️ Epidemic (Chaos Swarm)**: Enjambre mixto con roles asignados por % (ej: 60% tráfico normal, 20% latencia, 10% datos maliciosos, 10% blackout).
+* **🕸️ Cascade (Cascade Failure Mapping)**: Simula la caída en cadena de microservicios sobre un cluster base y mapea la velocidad de propagación del fallo.
+
+### 🎯 HUNTER Suite — Flujos Stateful Avanzados
+* **🎯 Hunter (Stateful User Journey)**: Simula navegaciones reales multi-paso (Login ➔ Token JWT ➔ Carrito ➔ Pago) manteniendo la sesión de usuario activa entre pasos.
+
+---
+
+## ⚖️ Responsabilidad Legal & Uso Ético (Legal Disclaimer)
+
+> [!WARNING]
+> **IMPORTANTE — TECNOLOGÍA DE DOBLE USO**: Maskito es una herramienta de auditoría de rendimiento e ingeniería de caos diseñada **exclusivamente para entornos de staging, pre-producción e infraestructuras de tu propiedad o expresamente autorizadas**.
+> 
+> El uso no autorizado de Maskito para lanzar ataques de Denegación de Servicio (DoS/DDoS de Capa 7) o fuzzing contra servidores de terceros constituye una violación grave de las leyes de ciberseguridad y de los **Términos de Servicio de GitHub (TOS)**.
+>
+> El usuario final asume el **100% de la responsabilidad legal, penal y ética** derivada del uso de este software.
+
+---
+
+## ⚡ Inyección Directa a Repositorios GitHub
+
+La Consola Web cuenta con el botón **`⚡ Inyectar a Repo GitHub`** en todas las vistas de workflow. Con tu Personal Access Token (PAT), la consola inyecta automáticamente el archivo `.github/workflows/maskito-*.yml` en la carpeta `.github/workflows/` de tu repositorio sin necesidad de realizar commits manuales por consola.
+
+---
+
+## 💻 CLI & SDK Integration
+
+### Instalación del CLI
 
 ```bash
 npm install -g terra-maskito
 ```
 
-### Initialize
+### Inicialización de la Bóveda de Almacenamiento
 
 ```bash
-export GITHUB_TOKEN=ghp_yourtoken
+export GITHUB_TOKEN=ghp_tupersonalaccesstoken
 maskito init
 ```
 
-### Generate a load test
+### Comandos de Ejemplo CLI
 
 ```bash
-# Create config
-cat > horde-config.json << 'EOF'
-{
-  "name": "My API Load Test",
-  "target": { "url": "https://my-api.com" },
-  "scenarios": [
-    { "name": "homepage", "endpoint": "/", "method": "GET" }
-  ],
-  "duration": "10m",
-  "swarm": { "size": 10 }
-}
-EOF
+# Parsear Schema
+maskito breed antenna --spec openapi.json
 
-# Generate GitHub Actions workflow
-maskito horde run --config horde-config.json --output .github/workflows/
-# Commit and trigger from GitHub Actions → 10 mosquitos swarm your API
-```
+# Generar Data Sintética
+maskito breed larva --config seed.yaml --format json
 
-### Generate synthetic data
+# Ejecutar Test de Carga
+maskito horde run --config maskito.yaml
 
-```bash
-# Parse your OpenAPI spec
-maskito breed antenna --spec openapi.json --output maskito-seed.yaml
-
-# Generate 10,000 coherent records
-maskito breed larva --config maskito-seed.yaml --format sql --output seed.sql
-```
-
-### Launch local console
-
-```bash
+# Iniciar la Consola Web Localhost (puerto elegible)
 maskito console --port 7410
-# → http://localhost:7410
 ```
 
 ---
 
-## SDK Usage
+## 📄 Licencia
 
-```typescript
-import { Maskito } from 'terra-maskito';
-
-const maskito = new Maskito({ githubToken: process.env.GITHUB_TOKEN! });
-await maskito.init();
-
-// Generate a Hunter (stateful journey) workflow
-const yaml = maskito.generateHunterWorkflow({
-  name: 'E-commerce User Journey',
-  target: { url: 'https://my-shop.com' },
-  journey: [
-    { name: 'Login',        action: 'request',  endpoint: '/api/auth/login', method: 'POST', body: { email: 'user@test.com', password: 'pass' } },
-    { name: 'Save Token',   action: 'extract',  extract_from: 'body', extract_path: '$.token', save_as: 'auth_token' },
-    { name: 'Browse',       action: 'request',  endpoint: '/api/products', method: 'GET' },
-    { name: 'Add to Cart',  action: 'request',  endpoint: '/api/cart', method: 'POST', body: { product_id: 1, qty: 2 } },
-    { name: 'Checkout',     action: 'request',  endpoint: '/api/checkout', method: 'POST' },
-    { name: 'Assert Order', action: 'assert',   assert_status: 200 },
-  ],
-  swarm: { size: 25 },  // 25 concurrent user journeys
-});
-
-// Write to file
-writeFileSync('.github/workflows/maskito-hunter.yml', yaml);
-```
-
----
-
-## Config Examples
-
-### Siege (48h soak test)
-```json
-{
-  "name": "Weekend Soak Test",
-  "target": { "url": "https://my-api.com" },
-  "scenarios": [{ "name": "health", "endpoint": "/health", "method": "GET" }],
-  "duration_hours": 48,
-  "relay_hours": 5.5,
-  "load_rps": 100
-}
-```
-
-### Epidemic (chaos swarm)
-```json
-{
-  "name": "Black Friday Simulation",
-  "target": { "url": "https://my-shop.com" },
-  "swarm_size": 50,
-  "composition": {
-    "normal_load": 60,
-    "latency_inject": 20,
-    "venom_data": 10,
-    "blackout": 10
-  },
-  "duration": "30m"
-}
-```
-
-### Larva Forge (synthetic users)
-```yaml
-# maskito-seed.yaml
-entities:
-  User:
-    count: 10000
-    fields:
-      - name: id
-        type: uuid
-      - name: email
-        type: email
-      - name: plan
-        type: enum
-        distribution:
-          type: enum
-          values: { premium: 20, free: 80 }
-      - name: age
-        type: number
-        distribution:
-          type: gaussian
-          mean: 32
-          std: 8
-          min: 18
-          max: 70
-  Order:
-    count: 50000
-    fields:
-      - name: id
-        type: uuid
-      - name: user_id
-        type: uuid
-        foreign_key: User.id
-      - name: total
-        type: number
-        distribution:
-          type: poisson
-          lambda: 85
-      - name: created_at
-        type: date
-        distribution:
-          type: temporal
-          pattern: higher_in_december
-```
-
----
-
-## Architecture
-
-```
-.maskito-storage (private GitHub repo)
-├── maskito-state.json     → all runs, configs, relay states
-├── results/               → historical test results
-└── seeds/                 → generated datasets
-
-GitHub Actions (the "mosquitos")
-├── Swarm Controller       → orchestrates parallel jobs
-├── Mosquito #0..N         → each runs the actual test
-└── Aggregator             → collects and reports results
-
-Compound Eye (GitHub Pages)
-└── Visual dashboard, metrics, run history
-```
-
----
-
-## Part of the Terra Ecosystem
-
-Maskito is part of **Terra** — a suite of $0 GitHub-native infrastructure tools.
-
-| App | Description |
-|:----|:-----------|
-| [Formica](https://github.com/amglogicalis/Formica) | Event Mesh, K/V Cache, Telemetry, WAF |
-| [Waisp](https://github.com/amglogicalis/Waisp) | Secrets Vault & Config Management |
-| [Grillout](https://github.com/amglogicalis/Grillout) | Async Queues & Notifications |
-| **Maskito** | Stress Testing & Synthetic Data |
-
----
-
-<div align="center">
-  <sub>Built with ❤️ by AMG Logicalis — Terra Ecosystem</sub><br>
-  <sub>MIT License — $0 Cost — GitHub Native</sub>
-</div>
+Desarrollado bajo licencia **MIT** dentro del ecosistema [Terra](https://github.com/amglogicalis/Terra).
